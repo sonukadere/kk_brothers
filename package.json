@@ -1,0 +1,16 @@
+{
+  "name": "kk-brothers-staff-management",
+  "version": "1.0.0",
+  "description": "Staff Duty & Payment Management System for Hotels and Catering",
+  "scripts": {
+    "start": "concurrently --kill-others \"npm run server\" \"npm run client\"",
+    "server": "npm --prefix backend run dev",
+    "server:start": "npm --prefix backend start",
+    "client": "npm --prefix frontend run dev",
+    "seed": "npm --prefix backend run seed",
+    "build": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
