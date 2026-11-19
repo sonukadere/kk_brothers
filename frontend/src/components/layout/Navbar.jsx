@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import ConnectionStatus from '../common/ConnectionStatus';
 import {
   Menu,
   Bell,
@@ -61,10 +60,8 @@ export const Navbar = ({ onOpenMobileMenu }) => {
         </div>
       </div>
 
-      {/* Right: DB Connection, Notifications, Profile */}
+      {/* Right: Notifications, Profile */}
       <div className="flex items-center gap-2.5 sm:gap-4">
-        {/* Live MongoDB Status Indicator */}
-        <ConnectionStatus />
 
         {/* Notification Bell */}
         <button
