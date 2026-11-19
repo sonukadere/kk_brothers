@@ -79,7 +79,7 @@ export const DutyManagement = () => {
     staffWage: 750,
     clientBillingAmount: 1100,
     location: 'Main Hall',
-    rolePerformed: 'Captain',
+    rolePerformed: 'Kitchen Helper',
     status: 'Approved',
     remarks: '',
   };
@@ -221,7 +221,7 @@ export const DutyManagement = () => {
       staffWage: duty.staffWage || 0,
       clientBillingAmount: duty.clientBillingAmount || 0,
       location: duty.location || '',
-      rolePerformed: duty.rolePerformed || 'Waiter',
+      rolePerformed: duty.rolePerformed || 'Kitchen Helper',
       status: duty.status || 'Approved',
       remarks: duty.remarks || '',
     });
@@ -773,7 +773,7 @@ export const DutyManagement = () => {
             />
             <Input
               label="Role Performed"
-              placeholder="e.g. Captain, Waiter, Helper"
+              placeholder="e.g. Kitchen Helper, Chef"
               value={formData.rolePerformed}
               onChange={(e) => setFormData({ ...formData, rolePerformed: e.target.value })}
             />

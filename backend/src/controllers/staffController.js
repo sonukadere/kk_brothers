@@ -238,7 +238,7 @@ exports.createStaff = async (req, res, next) => {
       dateOfBirth: dateOfBirth || null,
       age: age ? Number(age) : null,
       joiningDate: joiningDate || Date.now(),
-      designation: designation || 'Waiter',
+      designation: designation || 'Kitchen Helper',
       defaultDailyRate: defaultDailyRate !== undefined && defaultDailyRate !== '' ? Number(defaultDailyRate) : 600,
       defaultHourlyRate: defaultHourlyRate ? Number(defaultHourlyRate) : 75,
       status: status || 'active',

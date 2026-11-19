@@ -66,7 +66,7 @@ export const StaffProfile = () => {
     dateOfBirth: '',
     age: '',
     joiningDate: '',
-    designation: 'Waiter',
+    designation: 'Kitchen Helper',
     defaultDailyRate: 600,
     status: 'active',
     idProofType: 'Aadhaar',
@@ -130,7 +130,7 @@ export const StaffProfile = () => {
         : staff.joinDate
         ? staff.joinDate.slice(0, 10)
         : '',
-      designation: staff.designation || 'Waiter',
+      designation: staff.designation || 'Kitchen Helper',
       defaultDailyRate: staff.defaultDailyRate ?? 600,
       status: staff.status || 'active',
       idProofType: staff.idProofType || 'Aadhaar',
@@ -851,15 +851,8 @@ export const StaffProfile = () => {
               value={editFormData.designation}
               onChange={(e) => setEditFormData({ ...editFormData, designation: e.target.value })}
               options={[
-                'Waiter',
                 'Kitchen Helper',
                 'Chef',
-                'Captain',
-                'Housekeeping',
-                'Dishwasher',
-                'Bartender',
-                'Cleaner',
-                'Supervisor',
               ]}
             />
             <Input

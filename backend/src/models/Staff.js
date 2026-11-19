@@ -76,7 +76,7 @@ const staffSchema = new mongoose.Schema(
         'Staff',
         'Other',
       ],
-      default: 'Waiter',
+      default: 'Kitchen Helper',
     },
     defaultDailyRate: {
       type: Number,
