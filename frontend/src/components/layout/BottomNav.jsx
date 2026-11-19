@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 
 export const BottomNav = () => {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { user, isAdmin } = useAuth();
+  const isAdministrator = isAdmin || user?.role === 'admin';
 
-  if (isAdmin) {
+  if (isAdministrator) {
     // Mobile Bottom Nav for Admin
     const adminTabs = [
       { to: '/dashboard', label: 'Dashboard', icon: Home },

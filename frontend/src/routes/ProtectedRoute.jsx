@@ -24,8 +24,9 @@ export const ProtectedRoute = ({ requiredRole, children }) => {
     return <Navigate to="/login?deactivated=true" replace />;
   }
 
-  // Role mismatch -> Redirect to Forbidden screen
-  if (requiredRole && user?.role !== requiredRole) {
+  // Role check: Administrator has superuser access to all routes.
+  // Non-admin workers attempting to access admin routes are restricted to Forbidden screen.
+  if (requiredRole && user?.role !== 'admin' && user?.role !== requiredRole) {
     return <Navigate to="/forbidden" replace />;
   }
 

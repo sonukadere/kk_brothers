@@ -4,6 +4,6 @@ const { getAdminOverview, getUserOverview } = require('../controllers/overviewCo
 const { protect, authorize } = require('../middleware/auth');
 
 router.get('/admin', protect, authorize('admin'), getAdminOverview);
-router.get('/user', protect, authorize('user'), getUserOverview);
+router.get('/user', protect, authorize('user', 'admin'), getUserOverview);
 
 module.exports = router;

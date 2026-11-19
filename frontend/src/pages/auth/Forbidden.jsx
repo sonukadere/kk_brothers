@@ -8,8 +8,15 @@ export const Forbidden = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
 
+  React.useEffect(() => {
+    // If an administrator lands on forbidden, immediately return them to the Admin Dashboard
+    if (isAdmin || user?.role === 'admin') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAdmin, user, navigate]);
+
   const handleReturn = () => {
-    if (isAdmin) {
+    if (isAdmin || user?.role === 'admin') {
       navigate('/dashboard');
     } else {
       navigate('/user/dashboard');
