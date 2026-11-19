@@ -15,11 +15,10 @@ import {
   ShieldCheck,
   User,
   LogOut,
-  Sparkles,
 } from 'lucide-react';
 
 export const Sidebar = ({ isMobile = false, onCloseMobile }) => {
-  const { user, isAdmin, isUser, switchDemoRole, logout } = useAuth();
+  const { user, isAdmin, isUser, logout } = useAuth();
   const location = useLocation();
 
   // Navigation Items according to strict requirements
@@ -123,40 +122,6 @@ export const Sidebar = ({ isMobile = false, onCloseMobile }) => {
             </NavLink>
           );
         })}
-      </div>
-
-      {/* Role Switcher Demo Shortcut */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-        <div className="bg-indigo-50/60 border border-indigo-100/80 rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-900 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-indigo-600" />
-              Role Switcher
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => switchDemoRole('admin')}
-              className={`px-2 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
-                isAdmin
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              Admin View
-            </button>
-            <button
-              onClick={() => switchDemoRole('user')}
-              className={`px-2 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
-                isUser
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              Staff View
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* User Footer Profile & Logout */}
