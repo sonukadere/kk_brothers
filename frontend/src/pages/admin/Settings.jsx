@@ -4,8 +4,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import ConnectionStatus from '../../components/common/ConnectionStatus';
-import { Settings as SettingsIcon, Database, Shield, Building2, Save, Users, ArrowRight } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Building2, Save, Users, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Settings = () => {
@@ -154,32 +153,6 @@ export const Settings = () => {
             >
               Open User Accounts
             </Button>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-              <Database className="w-5 h-5 text-indigo-600" />
-              <h4 className="text-sm font-semibold text-slate-800">Database & Engine</h4>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Database Engine:</span>
-                <span className="font-semibold text-slate-800">MongoDB + Mongoose</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Authentication:</span>
-                <span className="font-semibold text-slate-800">JWT (JSON Web Token)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Isolation Policy:</span>
-                <span className="font-semibold text-emerald-600">Strict Tenant Separation</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Connection:</span>
-                <ConnectionStatus />
-              </div>
-            </div>
           </Card>
 
           <Card className="p-5 bg-slate-50 border-slate-200">
