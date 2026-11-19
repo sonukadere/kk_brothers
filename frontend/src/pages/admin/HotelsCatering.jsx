@@ -59,7 +59,7 @@ export const HotelsCatering = () => {
     alternatePhone: '',
     email: '',
     address: '',
-    city: 'Mumbai',
+    city: 'Indore',
     gstNumber: '',
     defaultBillingRatePerStaff: 1000,
     creditPeriodDays: 15,
@@ -126,7 +126,7 @@ export const HotelsCatering = () => {
       alternatePhone: client.alternatePhone || '',
       email: client.email || '',
       address: client.address || '',
-      city: client.city || 'Mumbai',
+      city: client.city || 'Indore',
       gstNumber: client.gstNumber || '',
       defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1000,
       creditPeriodDays: client.creditPeriodDays ?? 15,
@@ -263,7 +263,7 @@ export const HotelsCatering = () => {
           </div>
           <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
             <MapPin className="w-3 h-3" />
-            <span>{row.city || 'Mumbai'}</span>
+            <span>{row.city || 'Indore'}</span>
             {row.address && <span className="truncate max-w-[150px]"> • {row.address}</span>}
           </div>
         </div>
@@ -637,7 +637,7 @@ export const HotelsCatering = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="City"
-              placeholder="e.g. Mumbai, Pune, Thane"
+              placeholder="e.g. Indore, Ujjain, Dewas, Bhopal"
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
             />

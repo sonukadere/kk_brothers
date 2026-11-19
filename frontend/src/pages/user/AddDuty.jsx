@@ -218,7 +218,7 @@ export const AddDuty = () => {
                 </option>
                 {filteredClients.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.companyName} ({c.type} - {c.city || 'Mumbai'})
+                    {c.companyName} ({c.type} - {c.city || 'Indore'})
                   </option>
                 ))}
               </select>

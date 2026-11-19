@@ -354,7 +354,7 @@ exports.createClient = async (req, res, next) => {
       alternatePhone: alternatePhone ? alternatePhone.trim() : '',
       email: email ? email.trim().toLowerCase() : '',
       address: address ? address.trim() : '',
-      city: city ? city.trim() : 'Mumbai',
+      city: city ? city.trim() : 'Indore',
       gstNumber: gstNumber ? gstNumber.trim().toUpperCase() : '',
       defaultBillingRatePerStaff: defaultBillingRatePerStaff ? Number(defaultBillingRatePerStaff) : 1000,
       creditPeriodDays: creditPeriodDays ? Number(creditPeriodDays) : 15,

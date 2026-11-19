@@ -13,7 +13,7 @@ export const Settings = () => {
   const [config, setConfig] = useState({
     businessName: 'KK Brothers Workforce Logistics',
     tagline: 'Staff Duty & Payment Management System',
-    address: 'Near Airport Road, Andheri East, Mumbai, Maharashtra 400069',
+    address: 'Vijay Nagar, AB Road, Indore, Madhya Pradesh 452010',
     phone: '+91 98765 43210',
     email: 'admin@kkbrothers.com',
     defaultWaiterRate: 600,

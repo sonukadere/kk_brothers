@@ -403,7 +403,7 @@ export const ClientPayments = () => {
             <span>{client?.companyName}</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            {client?.city || 'Mumbai'} • {client?.type}
+            {client?.city || 'Indore'} • {client?.type}
           </div>
         </div>
       ),

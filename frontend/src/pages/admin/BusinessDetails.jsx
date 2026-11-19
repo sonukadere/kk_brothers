@@ -66,7 +66,7 @@ export const BusinessDetails = () => {
     alternatePhone: '',
     email: '',
     address: '',
-    city: 'Mumbai',
+    city: 'Indore',
     gstNumber: '',
     defaultBillingRatePerStaff: 1000,
     creditPeriodDays: 15,
@@ -114,7 +114,7 @@ export const BusinessDetails = () => {
       alternatePhone: client.alternatePhone || '',
       email: client.email || '',
       address: client.address || '',
-      city: client.city || 'Mumbai',
+      city: client.city || 'Indore',
       gstNumber: client.gstNumber || '',
       defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1000,
       creditPeriodDays: client.creditPeriodDays ?? 15,
@@ -472,7 +472,7 @@ export const BusinessDetails = () => {
                   <Phone className="w-3.5 h-3.5 text-slate-400" /> {client.phone}
                 </span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {client.city || 'Mumbai'}{' '}
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {client.city || 'Indore'}{' '}
                   {client.address ? `• ${client.address}` : ''}
                 </span>
                 {client.gstNumber && (
@@ -804,7 +804,7 @@ export const BusinessDetails = () => {
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-500">City / Region:</span>
-                <span className="font-medium text-slate-800">{client.city || 'Mumbai'}</span>
+                <span className="font-medium text-slate-800">{client.city || 'Indore'}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500">Address:</span>

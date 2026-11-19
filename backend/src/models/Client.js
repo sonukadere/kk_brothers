@@ -65,7 +65,7 @@ const clientSchema = new mongoose.Schema(
     city: {
       type: String,
       trim: true,
-      default: 'Mumbai',
+      default: 'Indore',
     },
     gstNumber: {
       type: String,
