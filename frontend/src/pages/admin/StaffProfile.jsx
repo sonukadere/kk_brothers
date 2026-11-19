@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { staffApi } from '../../api/staffApi';
 import { dutyApi } from '../../api/dutyApi';
 import { paymentApi } from '../../api/paymentApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import StatCard from '../../components/common/StatCard';
@@ -245,7 +246,7 @@ export const StaffProfile = () => {
       key: 'dutyDate',
       render: (val) => (
         <span className="text-xs font-medium text-slate-700">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -301,7 +302,7 @@ export const StaffProfile = () => {
       key: 'paymentDate',
       render: (val) => (
         <span className="text-xs text-slate-600">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -419,13 +420,7 @@ export const StaffProfile = () => {
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" /> Joined:{' '}
-                  {staff.joiningDate || staff.joinDate
-                    ? new Date(staff.joiningDate || staff.joinDate).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })
-                    : '—'}
+                  {formatDate(staff.joiningDate || staff.joinDate)}
                 </span>
                 {staff.age && (
                   <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700">
@@ -713,7 +708,7 @@ export const StaffProfile = () => {
                 <span className="text-slate-500">Age / Date of Birth:</span>
                 <span className="text-slate-800">
                   {staff.dateOfBirth
-                    ? new Date(staff.dateOfBirth).toLocaleDateString('en-IN')
+                    ? formatDate(staff.dateOfBirth)
                     : 'Not specified'}{' '}
                   {staff.age ? `(${staff.age} years)` : ''}
                 </span>

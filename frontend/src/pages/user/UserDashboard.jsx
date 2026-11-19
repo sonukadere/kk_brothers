@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { overviewApi } from '../../api/overviewApi';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/dateUtils';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import { StatusBadge, Badge } from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -264,10 +265,7 @@ export const UserDashboard = () => {
                       </span>
                       <span>•</span>
                       <span>
-                        {new Date(duty.dutyDate).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                        {formatDate(duty.dutyDate)}
                       </span>
                     </div>
 

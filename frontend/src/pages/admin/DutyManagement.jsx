@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { dutyApi } from '../../api/dutyApi';
 import { staffApi } from '../../api/staffApi';
 import { clientApi } from '../../api/clientApi';
+import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import StatCard from '../../components/common/StatCard';
@@ -328,7 +329,7 @@ export const DutyManagement = () => {
       key: 'dutyDate',
       render: (val) => (
         <span className="text-xs font-medium text-slate-700">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -1009,7 +1010,7 @@ export const DutyManagement = () => {
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block">Reported By: {selectedDuty.reportedBy}</span>
                 {selectedDuty.verifiedAt && (
-                  <span className="text-[10px] text-emerald-600 block">Verified on {new Date(selectedDuty.verifiedAt).toLocaleDateString()}</span>
+                  <span className="text-[10px] text-emerald-600 block">Verified on {formatDate(selectedDuty.verifiedAt)}</span>
                 )}
               </div>
             </div>
@@ -1026,7 +1027,7 @@ export const DutyManagement = () => {
                   selectedDuty.changeLog?.map((c, i) => (
                     <div key={i} className="text-[11px] text-slate-600 border-b border-slate-100 pb-1">
                       <span className="text-slate-400 font-mono">
-                        {new Date(c.modifiedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •{' '}
+                        {formatDateTime(c.modifiedAt)} •{' '}
                       </span>
                       <span>{c.changeSummary}</span>
                     </div>

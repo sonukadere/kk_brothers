@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { userApi } from '../../api/userApi';
 import { staffApi } from '../../api/staffApi';
 import { useAuth } from '../../context/AuthContext';
+import { formatDateTime } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Table from '../../components/common/Table';
@@ -273,7 +274,7 @@ export const UserManagement = () => {
       key: 'lastLogin',
       render: (val) => (
         <span className="text-xs text-slate-500">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never logged in'}
+          {val ? formatDateTime(val) : 'Never logged in'}
         </span>
       ),
     },

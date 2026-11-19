@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { overviewApi } from '../../api/overviewApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Table from '../../components/common/Table';
@@ -385,7 +386,7 @@ export const AdminDashboard = () => {
                           <span className="text-slate-400">{duty.location || 'Main Section'}</span>
                         </div>
                         <div className="text-[11px] text-slate-400 mt-0.5 font-medium">
-                          {new Date(duty.dutyDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} •{' '}
+                          {formatDate(duty.dutyDate)} •{' '}
                           {duty.inTime} - {duty.outTime} ({duty.hoursWorked}h)
                           {duty.isOvernight && <span className="text-purple-600 font-bold ml-1">🌙 Overnight</span>}
                         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { paymentApi } from '../../api/paymentApi';
 import { dutyApi } from '../../api/dutyApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Table from '../../components/common/Table';
@@ -229,11 +230,7 @@ export const MyPayments = () => {
                         <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                           <Calendar className="w-3 h-3 text-slate-400" />
                           <span>
-                            {new Date(duty.dutyDate).toLocaleDateString('en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {formatDate(duty.dutyDate)}
                           </span>
                         </div>
                       </div>
@@ -301,11 +298,7 @@ export const MyPayments = () => {
                               {duty.client?.companyName}
                             </td>
                             <td className="py-3 px-4 text-slate-600">
-                              {new Date(duty.dutyDate).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
+                              {formatDate(duty.dutyDate)}
                             </td>
                             <td className="py-3 px-4 text-right font-bold text-slate-900">
                               ₹{totalEarning.toLocaleString()}
@@ -349,11 +342,7 @@ export const MyPayments = () => {
                   </span>
                   <div className="text-xs text-slate-500 mt-0.5">
                     Mode: <span className="font-semibold text-slate-800">{v.paymentMethod || v.paymentMode}</span> •{' '}
-                    {new Date(v.paymentDate).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
+                    {formatDate(v.paymentDate)}
                   </div>
                   {v.transactionReference && (
                     <div className="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -395,7 +384,7 @@ export const MyPayments = () => {
               <div className="flex justify-between py-1 border-b border-slate-200">
                 <span className="text-slate-500">Disbursed Date:</span>
                 <span className="font-semibold text-slate-900">
-                  {new Date(selectedVoucher.paymentDate).toLocaleDateString('en-IN')}
+                  {formatDate(selectedVoucher.paymentDate)}
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-200">

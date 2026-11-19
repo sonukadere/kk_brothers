@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { dutyApi } from '../../api/dutyApi';
 import { clientApi } from '../../api/clientApi';
 import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
@@ -384,12 +385,7 @@ export const AddDuty = () => {
             <div className="flex justify-between py-1 border-b border-slate-200/70">
               <span className="text-slate-500">Date:</span>
               <span className="font-semibold text-slate-900">
-                {new Date(formData.dutyDate).toLocaleDateString('en-IN', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
+                {formatDate(formData.dutyDate)}
               </span>
             </div>
 

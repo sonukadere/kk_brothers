@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { paymentApi } from '../../api/paymentApi';
 import { clientApi } from '../../api/clientApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import StatCard from '../../components/common/StatCard';
@@ -467,13 +468,7 @@ export const ClientPayments = () => {
       key: 'receivedDate',
       render: (val, row) => (
         <span className="text-xs text-slate-500">
-          {val || row.paymentDate
-            ? new Date(val || row.paymentDate).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })
-            : '—'}
+          {formatDate(val || row.paymentDate)}
         </span>
       ),
     },
@@ -533,7 +528,7 @@ export const ClientPayments = () => {
       key: 'billDate',
       render: (val) => (
         <span className="text-xs text-slate-600">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -1345,7 +1340,7 @@ export const ClientPayments = () => {
                         <div>
                           <div className="font-bold text-slate-900">{d.dutySlipNumber}</div>
                           <div className="text-[11px] text-slate-500">
-                            {new Date(d.dutyDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {d.staff?.name} ({d.hoursWorked} hrs)
+                            {formatDate(d.dutyDate)} • {d.staff?.name} ({d.hoursWorked} hrs)
                           </div>
                         </div>
                       </div>
@@ -1428,11 +1423,7 @@ export const ClientPayments = () => {
                   {currentReceipt.receiptNumber}
                 </span>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  {new Date(currentReceipt.receiptDate).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {formatDate(currentReceipt.receiptDate)}
                 </p>
               </div>
             </div>
@@ -1576,7 +1567,7 @@ export const ClientPayments = () => {
                     <div>
                       <span className="font-mono font-bold text-slate-800">{d.dutySlipNumber}</span>
                       <span className="text-slate-500 ml-2">
-                        {new Date(d.dutyDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {d.staff?.name}
+                        {formatDate(d.dutyDate)} • {d.staff?.name}
                       </span>
                     </div>
                     <span className="font-bold text-indigo-700">₹{d.clientBillingAmount?.toLocaleString()}</span>
@@ -1600,7 +1591,7 @@ export const ClientPayments = () => {
                       <div>
                         <span className="font-mono font-bold text-slate-800">{p.receiptNo || p.clientPaymentId}</span>
                         <div className="text-[11px] text-slate-500">
-                          {new Date(p.receivedDate).toLocaleDateString('en-IN')} via {p.paymentMethod} (Ref: {p.transactionReference || 'N/A'})
+                          {formatDate(p.receivedDate)} via {p.paymentMethod} (Ref: {p.transactionReference || 'N/A'})
                         </div>
                       </div>
                       <span className="font-bold text-emerald-700 text-sm">

@@ -11,6 +11,7 @@ import Input from '../../components/common/Input';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { StatusBadge, Badge } from '../../components/common/Badge';
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
+import { formatDate } from '../../utils/dateUtils';
 import {
   FileSpreadsheet,
   FileText,
@@ -176,7 +177,7 @@ export const Reports = () => {
     } else if (reportType === 'date_duties') {
       rows = (reportData.data || []).map((d) => ({
         'Duty Slip #': d.dutySlipNumber,
-        Date: new Date(d.dutyDate).toLocaleDateString('en-IN'),
+        Date: formatDate(d.dutyDate),
         'Staff Name': d.staffName,
         'Staff Code': d.staffCode,
         'Client Name': d.clientName,
@@ -195,7 +196,7 @@ export const Reports = () => {
     } else if (reportType === 'staff_payments') {
       rows = (reportData.data || []).map((p) => ({
         'Voucher #': p.paymentId,
-        Date: new Date(p.paymentDate).toLocaleDateString('en-IN'),
+        Date: formatDate(p.paymentDate),
         'Staff Name': p.staffName,
         'Staff Code': p.staffCode,
         'Phone Number': p.phone,
@@ -211,7 +212,7 @@ export const Reports = () => {
     } else if (reportType === 'client_payments') {
       rows = (reportData.data || []).map((p) => ({
         'Receipt Voucher #': p.paymentId,
-        Date: new Date(p.paymentDate).toLocaleDateString('en-IN'),
+        Date: formatDate(p.paymentDate),
         'Client Name': p.clientName,
         'Business Type': p.businessType,
         'Business ID': p.businessId,
@@ -276,7 +277,7 @@ export const Reports = () => {
     if (!reportData) return;
 
     let title = 'Report';
-    let subtitle = `Period: ${startDate} to ${endDate}`;
+    let subtitle = `Period: ${formatDate(startDate)} to ${formatDate(endDate)}`;
     let headers = [];
     let rows = [];
     let summaryCards = [];
@@ -334,7 +335,7 @@ export const Reports = () => {
       headers = ['Slip #', 'Date', 'Staff Worker', 'Hotel/Catering', 'Hours', 'Staff Wage', 'Client Charge', 'Margin', 'Status'];
       rows = (reportData.data || []).map((d) => [
         d.dutySlipNumber,
-        new Date(d.dutyDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+        formatDate(d.dutyDate),
         d.staffName,
         d.clientName,
         `${d.hoursWorked}h`,
@@ -357,7 +358,7 @@ export const Reports = () => {
       headers = ['Voucher #', 'Date', 'Staff Worker', 'Phone', 'Amount Paid', 'Type', 'Method', 'Ref #', 'Status'];
       rows = (reportData.data || []).map((p) => [
         p.paymentId,
-        new Date(p.paymentDate).toLocaleDateString('en-IN'),
+        formatDate(p.paymentDate),
         p.staffName,
         p.phone,
         `₹${p.amount.toLocaleString()}`,
@@ -380,7 +381,7 @@ export const Reports = () => {
       headers = ['Receipt #', 'Date', 'Hotel / Catering', 'Type', 'Amount Received', 'Method', 'Ref #', 'Status'];
       rows = (reportData.data || []).map((p) => [
         p.paymentId,
-        new Date(p.paymentDate).toLocaleDateString('en-IN'),
+        formatDate(p.paymentDate),
         p.clientName,
         p.businessType,
         `₹${p.amount.toLocaleString()}`,
@@ -970,7 +971,7 @@ export const Reports = () => {
                           <tr key={d._id} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-3 px-4 font-mono font-semibold text-slate-800">{d.dutySlipNumber}</td>
                             <td className="py-3 px-4 text-slate-600">
-                              {new Date(d.dutyDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                              {formatDate(d.dutyDate)}
                             </td>
                             <td className="py-3 px-4 font-medium text-slate-900">{d.staffName}</td>
                             <td className="py-3 px-4 text-slate-800">
@@ -993,7 +994,7 @@ export const Reports = () => {
                         (reportData.data || []).map((p, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-3 px-4 font-mono font-semibold text-slate-800">{p.paymentId}</td>
-                            <td className="py-3 px-4 text-slate-600">{new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
+                            <td className="py-3 px-4 text-slate-600">{formatDate(p.paymentDate)}</td>
                             <td className="py-3 px-4 font-medium text-slate-900">{p.staffName}</td>
                             <td className="py-3 px-4 text-slate-500 font-mono">{p.phone}</td>
                             <td className="py-3 px-4 text-right font-bold text-slate-900">₹{p.amount.toLocaleString()}</td>
@@ -1012,7 +1013,7 @@ export const Reports = () => {
                         (reportData.data || []).map((p, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                             <td className="py-3 px-4 font-mono font-semibold text-slate-800">{p.paymentId}</td>
-                            <td className="py-3 px-4 text-slate-600">{new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
+                            <td className="py-3 px-4 text-slate-600">{formatDate(p.paymentDate)}</td>
                             <td className="py-3 px-4 font-medium text-slate-900">{p.clientName}</td>
                             <td className="py-3 px-4">
                               <Badge variant={p.businessType === 'Hotel' ? 'indigo' : 'purple'} size="sm">

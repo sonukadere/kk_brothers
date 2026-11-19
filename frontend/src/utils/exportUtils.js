@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatDate, formatDateTime } from './dateUtils';
 
 /**
  * Export data to an Excel (.xlsx) file
@@ -32,7 +33,7 @@ export const exportToExcel = (rows, fileName = 'Report', sheetName = 'Data') => 
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
   // Generate date stamp
-  const dateStr = new Date().toISOString().slice(0, 10);
+  const dateStr = formatDate(new Date()).replace(/\//g, '-');
   XLSX.writeFile(workbook, `${fileName}_${dateStr}.xlsx`);
 };
 
@@ -81,7 +82,7 @@ export const exportToPDF = ({
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(203, 213, 225); // slate-300
-  const generatedText = `Generated: ${new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`;
+  const generatedText = `Generated: ${formatDateTime(new Date())}`;
   doc.text(generatedText, pageWidth - 40, 48, { align: 'right' });
 
   let currentY = 85;

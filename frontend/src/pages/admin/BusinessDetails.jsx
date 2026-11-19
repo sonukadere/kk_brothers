@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientApi } from '../../api/clientApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import StatCard from '../../components/common/StatCard';
@@ -216,7 +217,7 @@ export const BusinessDetails = () => {
       key: 'dutyDate',
       render: (val) => (
         <span className="text-xs font-medium text-slate-700">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -322,7 +323,7 @@ export const BusinessDetails = () => {
       key: 'lastDutyDate',
       render: (val) => (
         <span className="text-xs text-slate-500">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -355,7 +356,7 @@ export const BusinessDetails = () => {
       key: 'paymentDate',
       render: (val) => (
         <span className="text-xs text-slate-600">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { paymentApi } from '../../api/paymentApi';
 import { staffApi } from '../../api/staffApi';
+import { formatDate } from '../../utils/dateUtils';
 import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import StatCard from '../../components/common/StatCard';
@@ -375,7 +376,7 @@ export const StaffPayments = () => {
       key: 'paymentDate',
       render: (val) => (
         <span className="text-xs text-slate-600">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -943,11 +944,7 @@ export const StaffPayments = () => {
                   {currentReceipt.receiptNumber}
                 </span>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  {new Date(currentReceipt.receiptDate).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {formatDate(currentReceipt.receiptDate)}
                 </p>
               </div>
             </div>

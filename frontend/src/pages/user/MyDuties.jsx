@@ -8,6 +8,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import { StatusBadge, Badge } from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { formatDate } from '../../utils/dateUtils';
 import {
   CalendarCheck,
   Plus,
@@ -94,7 +95,7 @@ export const MyDuties = () => {
       key: 'dutyDate',
       render: (val) => (
         <span className="text-xs font-medium text-slate-700">
-          {val ? new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+          {formatDate(val)}
         </span>
       ),
     },
@@ -230,11 +231,7 @@ export const MyDuties = () => {
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1 text-slate-600 font-medium">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {new Date(duty.dutyDate).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
+                    {formatDate(duty.dutyDate)}
                   </div>
 
                   <div className="flex items-center gap-1 font-semibold text-slate-900">
@@ -302,12 +299,7 @@ export const MyDuties = () => {
               <div>
                 <span className="text-[11px] text-slate-400 block">Duty Date</span>
                 <span className="font-semibold text-slate-900 text-sm">
-                  {new Date(selectedDuty.dutyDate).toLocaleDateString('en-IN', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {formatDate(selectedDuty.dutyDate)}
                 </span>
               </div>
 
