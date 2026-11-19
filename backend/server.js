@@ -1,4 +1,6 @@
 require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
@@ -37,19 +39,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root welcome route
-app.get('/', (req, res) => {
-  res.json({
-    service: 'KK Brothers - Staff Duty & Payment Management System',
-    version: '1.0.0',
-    status: 'online',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-    },
-  });
-});
-
 // API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
@@ -62,12 +51,34 @@ app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Catch-all 404 for unhandled API routes
-app.use((req, res) => {
+app.all('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
     message: `API endpoint '${req.originalUrl}' does not exist on this server.`,
   });
 });
+
+// Serve frontend production build if available
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+} else {
+  // Root welcome route for API only (when frontend is not built)
+  app.get('/', (req, res) => {
+    res.json({
+      service: 'KK Brothers - Staff Duty & Payment Management System',
+      version: '1.0.0',
+      status: 'online',
+      endpoints: {
+        health: '/api/health',
+        auth: '/api/auth',
+      },
+    });
+  });
+}
 
 // Error handling middleware
 app.use(errorHandler);
