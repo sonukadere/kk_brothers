@@ -139,76 +139,76 @@ export const Navbar = ({ onOpenMobileMenu }) => {
           </div>
         </div>
 
-        {/* Center: Admin Quick Actions Dropdown in Navbar */}
-        {isAdmin && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowQuickActionsMenu(!showQuickActionsMenu)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs shadow-xs transition-all hover:shadow-indigo-200 cursor-pointer active:scale-98"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-              <span>Quick Actions</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  showQuickActionsMenu ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-
-            {showQuickActionsMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowQuickActionsMenu(false)}
-                />
-                <div className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-2.5 z-50 animate-in fade-in zoom-in-95">
-                  <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-indigo-600 fill-indigo-600" />
-                      Quick Operations
-                    </span>
-                    <span className="text-[10px] text-slate-400">All Shortcuts</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {quickActions.map((action, idx) => {
-                      const Icon = action.icon;
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setShowQuickActionsMenu(false);
-                            navigate(action.path);
-                          }}
-                          className={`flex items-center gap-2 p-2 rounded-xl border text-left transition group cursor-pointer ${action.bg} ${action.border}`}
-                        >
-                          <div
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${action.iconBg}`}
-                          >
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className={`text-xs font-bold leading-tight ${action.text}`}>
-                              {action.label}
-                            </div>
-                            <div className="text-[10px] text-slate-400 truncate">
-                              {action.desc}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Right: Notifications, Profile */}
+        {/* Right: Quick Actions, Notifications, Profile */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Admin Quick Actions Dropdown (Positioned next to notification bell) */}
+          {isAdmin && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowQuickActionsMenu(!showQuickActionsMenu)}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold text-xs shadow-xs transition-all hover:shadow-indigo-200 cursor-pointer active:scale-98"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Quick Actions</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    showQuickActionsMenu ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {showQuickActionsMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowQuickActionsMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-2.5 z-50 animate-in fade-in zoom-in-95">
+                    <div className="flex items-center justify-between px-2 py-1.5 border-b border-slate-100 mb-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-indigo-600 fill-indigo-600" />
+                        Quick Operations
+                      </span>
+                      <span className="text-[10px] text-slate-400">All Shortcuts</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {quickActions.map((action, idx) => {
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setShowQuickActionsMenu(false);
+                              navigate(action.path);
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-left transition group cursor-pointer ${action.bg} ${action.border}`}
+                          >
+                            <div
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${action.iconBg}`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className={`text-xs font-bold leading-tight ${action.text}`}>
+                                {action.label}
+                              </div>
+                              <div className="text-[10px] text-slate-400 truncate">
+                                {action.desc}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Notification Bell */}
           <button
             title="Notifications"
