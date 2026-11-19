@@ -420,8 +420,8 @@ export const Login = () => {
                     value={registerData.designation}
                     onChange={(e) => setRegisterData({ ...registerData, designation: e.target.value })}
                     options={[
-                      { value: 'Kitchen Helper', label: 'Kitchen Helper (₹600/day)' },
-                      { value: 'Chef', label: 'Chef (₹800/day)' },
+                      'Kitchen Helper',
+                      'Chef',
                     ]}
                   />
 
