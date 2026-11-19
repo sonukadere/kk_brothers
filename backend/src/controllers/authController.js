@@ -22,7 +22,7 @@ const sendTokenResponse = (user, statusCode, res, message = 'Success') => {
   });
 };
 
-// @desc    Login with Email OR Mobile Number and Password
+// @desc    Login with Email, Mobile Number, or Staff ID and Password
 // @route   POST /api/auth/login
 // @access  Public
 exports.login = async (req, res, next) => {
@@ -33,14 +33,36 @@ exports.login = async (req, res, next) => {
     if (!identifier || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide your email or mobile number, and password.',
+        message: 'Please provide your email, mobile number or Staff ID, and password.',
       });
     }
 
-    // Determine query: email vs phone number
+    // Determine query: email vs phone number vs Staff ID
     let query;
+    let matchedStaff = null;
+
     if (identifier.includes('@')) {
       query = { email: identifier.toLowerCase() };
+    } else if (/^stf[\s-]?\d+/i.test(identifier)) {
+      // Direct Staff ID login (e.g. STF-0001, STF0001)
+      const cleanCode = identifier.toUpperCase().replace(/\s+/g, '');
+      const withHyphen = cleanCode.replace(/^(STF)(\d+)$/, '$1-$2');
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { staffCode: cleanCode },
+          { staffCode: withHyphen },
+          { staffId: cleanCode },
+          { staffId: withHyphen },
+        ],
+      });
+
+      if (matchedStaff && matchedStaff.user) {
+        query = { _id: matchedStaff.user };
+      } else if (matchedStaff) {
+        query = { staffProfile: matchedStaff._id };
+      } else {
+        query = { email: identifier.toLowerCase() };
+      }
     } else {
       // Clean non-digit characters for phone comparison
       const digitsOnly = identifier.replace(/\D/g, '');
@@ -57,13 +79,55 @@ exports.login = async (req, res, next) => {
         conditions.push({ phone: { $regex: flexiblePattern, $options: 'i' } });
       }
 
+      // Check if this phone belongs to a Staff worker
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { phone: identifier },
+          { phone: digitsOnly },
+          ...(last10.length >= 7 ? [{ phone: { $regex: last10 + '$' } }] : []),
+        ],
+      });
+
+      if (matchedStaff && matchedStaff.user) {
+        conditions.push({ _id: matchedStaff.user });
+      }
+
       query = { $or: conditions };
     }
 
     // Check for user
-    const user = await User.findOne(query)
+    let user = await User.findOne(query)
       .select('+password')
       .populate('staffProfile');
+
+    // If User was not found, but a registered Staff was matched (auto-provision on the fly)
+    if (!user && matchedStaff) {
+      const isDefault =
+        password === 'Staff@123' ||
+        password === matchedStaff.phone ||
+        (matchedStaff.phone && password === matchedStaff.phone.slice(-6));
+
+      if (!isDefault) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid password. For staff initial login, default password is: Staff@123',
+        });
+      }
+
+      const cleanEmail = `${matchedStaff.staffCode.toLowerCase().replace(/[^a-z0-9]/g, '')}@staff.kkbrothers.com`;
+      user = await User.create({
+        name: matchedStaff.name,
+        email: cleanEmail,
+        phone: matchedStaff.phone,
+        password: password,
+        role: 'user',
+        staffProfile: matchedStaff._id,
+        isActive: matchedStaff.status === 'active',
+      });
+      matchedStaff.user = user._id;
+      await matchedStaff.save();
+      user = await User.findById(user._id).select('+password').populate('staffProfile');
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -93,7 +157,7 @@ exports.login = async (req, res, next) => {
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
-    sendTokenResponse(user, 200, res, 'Logged in successfully');
+    sendTokenResponse(user, 200, res, `Welcome ${user.name}! Logged in successfully.`);
   } catch (error) {
     next(error);
   }

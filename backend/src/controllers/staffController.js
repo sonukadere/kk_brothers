@@ -249,6 +249,24 @@ exports.createStaff = async (req, res, next) => {
       notes: notes ? notes.trim() : '',
     });
 
+    // Auto-provision User login account for this staff worker
+    try {
+      const cleanEmail = `${staff.staffCode.toLowerCase().replace(/[^a-z0-9]/g, '')}@staff.kkbrothers.com`;
+      const staffUser = await User.create({
+        name: staff.name,
+        email: cleanEmail,
+        phone: staff.phone,
+        password: 'Staff@123',
+        role: 'user',
+        staffProfile: staff._id,
+        isActive: staff.status === 'active',
+      });
+      staff.user = staffUser._id;
+      await staff.save();
+    } catch (e) {
+      console.warn('Auto staff user account provisioning note:', e.message);
+    }
+
     res.status(201).json({
       success: true,
       message: `Staff member registered successfully with Staff ID: ${staff.staffCode}`,

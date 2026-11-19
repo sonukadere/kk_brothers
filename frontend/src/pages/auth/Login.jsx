@@ -6,6 +6,7 @@ import { Input } from '../../components/common/Input';
 import {
   ShieldCheck,
   User,
+  ChefHat,
   Sparkles,
   Building2,
   CalendarCheck,
@@ -18,10 +19,12 @@ import {
   EyeOff,
   Database,
   ShieldAlert,
+  IdCard,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Login = () => {
+  const [loginMode, setLoginMode] = useState('staff'); // 'staff' | 'admin'
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +35,11 @@ export const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!identifier.trim() || !password) {
-      toast.error('Please enter your email or mobile number, and password.');
+      toast.error(
+        loginMode === 'staff'
+          ? 'Please enter your Mobile Number or Staff ID, and password.'
+          : 'Please enter your Admin Email or Mobile, and password.'
+      );
       return;
     }
 
@@ -49,17 +56,19 @@ export const Login = () => {
     }
   };
 
-  const handleQuickDemoLogin = async (role, type = 'email') => {
+  const handleQuickDemoLogin = async (role, type = 'mobile') => {
     setIsLoading(true);
     let id;
     let pass;
 
     if (role === 'admin') {
-      id = type === 'mobile' ? '9876543210' : 'admin@kkbrothers.com';
+      id = type === 'mobile' ? '6264791823' : 'admin@kkbrothers.com';
       pass = 'Admin@123';
+      setLoginMode('admin');
     } else {
-      id = type === 'mobile' ? '9765432109' : 'staff@kkbrothers.com';
+      id = type === 'staffId' ? 'STF-0001' : '9329148985';
       pass = 'Staff@123';
+      setLoginMode('staff');
     }
 
     setIdentifier(id);
@@ -77,7 +86,9 @@ export const Login = () => {
     }
   };
 
+  const isStaffMode = loginMode === 'staff';
   const isPhone = identifier && !identifier.includes('@') && /^\+?[\d\s-]+$/.test(identifier);
+  const isStaffId = identifier && /^stf/i.test(identifier.trim());
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 sm:px-6 lg:px-8">
@@ -98,103 +109,142 @@ export const Login = () => {
       </div>
 
       <div className="mt-7 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-8 px-6 sm:px-8 rounded-2xl shadow-sm border border-slate-200">
+        <div className="bg-white py-7 px-6 sm:px-8 rounded-2xl shadow-sm border border-slate-200">
+          {/* LOGIN ROLE TABS: STAFF vs ADMIN */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-5">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('staff');
+                setIdentifier('');
+                setPassword('');
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                isStaffMode
+                  ? 'bg-white text-emerald-700 shadow-xs ring-1 ring-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ChefHat className={`w-4 h-4 ${isStaffMode ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <span>Sign In as Staff</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('admin');
+                setIdentifier('');
+                setPassword('');
+              }}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                !isStaffMode
+                  ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className={`w-4 h-4 ${!isStaffMode ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span>Sign In as Admin</span>
+            </button>
+          </div>
+
           {/* Quick Demo Login Grid */}
-          <div className="mb-6 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+          <div className="mb-5 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                Quick Demo Credentials
+                Quick Login Shortcuts
               </span>
               <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                <Database className="w-2.5 h-2.5" /> MongoDB Active
+                <Database className="w-2.5 h-2.5" /> Ready
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs space-y-1.5">
+              {/* Staff Worker Shortcut */}
+              <div
+                onClick={() => handleQuickDemoLogin('user', 'mobile')}
+                className={`p-2.5 rounded-lg border shadow-2xs space-y-1 cursor-pointer transition ${
+                  isStaffMode
+                    ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-300'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800">Admin</span>
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                  <span className="text-xs font-bold text-slate-900">Staff Worker</span>
+                  <ChefHat className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                <div className="text-[10px] text-slate-400">Full System Access</div>
-                <div className="pt-1 flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('admin', 'email')}
-                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100/70 py-1 px-1.5 rounded transition text-left truncate cursor-pointer"
-                  >
-                    Via Email
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('admin', 'mobile')}
-                    className="text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 py-1 px-1.5 rounded transition text-left truncate cursor-pointer"
-                  >
-                    Via Mobile: 9876543210
-                  </button>
-                </div>
+                <div className="text-[10px] text-slate-500">Kishan (9329148985)</div>
+                <div className="text-[10px] text-emerald-700 font-medium">Click to fill & login &rarr;</div>
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs space-y-1.5">
+              {/* Admin Shortcut */}
+              <div
+                onClick={() => handleQuickDemoLogin('admin', 'mobile')}
+                className={`p-2.5 rounded-lg border shadow-2xs space-y-1 cursor-pointer transition ${
+                  !isStaffMode
+                    ? 'bg-indigo-50/60 border-indigo-300 ring-1 ring-indigo-300'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800">Staff Worker</span>
-                  <User className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-xs font-bold text-slate-900">Admin</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
                 </div>
-                <div className="text-[10px] text-slate-400">Personal Duties & Pay</div>
-                <div className="pt-1 flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('user', 'email')}
-                    className="text-[11px] font-medium text-emerald-700 hover:text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100/70 py-1 px-1.5 rounded transition text-left truncate cursor-pointer"
-                  >
-                    Via Email
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemoLogin('user', 'mobile')}
-                    className="text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 py-1 px-1.5 rounded transition text-left truncate cursor-pointer"
-                  >
-                    Via Mobile: 9765432109
-                  </button>
-                </div>
+                <div className="text-[10px] text-slate-500">Full System Control</div>
+                <div className="text-[10px] text-indigo-700 font-medium">Click to fill & login &rarr;</div>
               </div>
             </div>
           </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email Address or Mobile Number"
-              type="text"
-              required
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. 9765432109 or admin@kkbrothers.com"
-              leftIcon={
-                isPhone ? (
-                  <Phone className="w-4 h-4 text-indigo-600" />
-                ) : (
-                  <Mail className="w-4 h-4 text-slate-400" />
-                )
-              }
-              helperText={
-                isPhone
-                  ? 'Mobile login detected (10-digit number)'
-                  : 'Enter your registered email address or mobile phone'
-              }
-            />
+            {isStaffMode ? (
+              <Input
+                label="Staff Mobile Number or Staff ID"
+                type="text"
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g. 9329148985 or STF-0001"
+                leftIcon={
+                  isStaffId ? (
+                    <IdCard className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Phone className="w-4 h-4 text-emerald-600" />
+                  )
+                }
+                helperText="Enter your 10-digit registered mobile number or your Staff ID"
+              />
+            ) : (
+              <Input
+                label="Admin Email or Mobile"
+                type="text"
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="e.g. admin@kkbrothers.com or 6264791823"
+                leftIcon={
+                  isPhone ? (
+                    <Phone className="w-4 h-4 text-indigo-600" />
+                  ) : (
+                    <Mail className="w-4 h-4 text-indigo-600" />
+                  )
+                }
+                helperText="Enter your administrator email or mobile phone"
+              />
+            )}
 
             <div>
               <div className="relative">
                 <Input
-                  label="Password"
+                  label={isStaffMode ? 'Password / PIN' : 'Password'}
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+                  helperText={isStaffMode ? 'Default initial password is Staff@123' : undefined}
                   rightIcon={
                     <button
                       type="button"
@@ -215,13 +265,13 @@ export const Login = () => {
             <div className="pt-2">
               <Button
                 type="submit"
-                variant="primary"
+                variant={isStaffMode ? 'success' : 'primary'}
                 size="lg"
                 className="w-full"
                 isLoading={isLoading}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Sign In to Account
+                {isStaffMode ? 'Sign In as Staff Worker' : 'Sign In as Administrator'}
               </Button>
             </div>
           </form>
@@ -230,9 +280,12 @@ export const Login = () => {
           <div className="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2 text-xs text-slate-600 leading-relaxed">
             <ShieldAlert className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-slate-800">Strict Access Control:</span> Public
-              registration is disabled. Worker and administrative accounts are provisioned
-              exclusively by system administrators.
+              <span className="font-semibold text-slate-800">
+                {isStaffMode ? 'Staff Worker Access:' : 'Administrator Access:'}
+              </span>{' '}
+              {isStaffMode
+                ? 'Workers can view their personal duty records, daily shifts, and payment voucher history.'
+                : 'Access to workforce rosters, hotel/catering billing, client collections, and business reports.'}
             </div>
           </div>
         </div>
