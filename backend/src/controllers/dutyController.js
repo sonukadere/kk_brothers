@@ -243,7 +243,7 @@ exports.createDuty = async (req, res, next) => {
 
       // Admin can specify rates or fallback to defaults
       staffWage = req.body.staffWage !== undefined ? Number(req.body.staffWage) : staffDoc.defaultDailyRate || 750;
-      clientBillingAmount = req.body.clientBillingAmount !== undefined ? Number(req.body.clientBillingAmount) : clientDoc.defaultBillingRatePerStaff || 1000;
+      clientBillingAmount = req.body.clientBillingAmount !== undefined ? Number(req.body.clientBillingAmount) : clientDoc.defaultBillingRatePerStaff || 1200;
       reportedBy = 'Admin';
       initialStatus = req.body.status || 'Approved';
     } else {
@@ -269,7 +269,7 @@ exports.createDuty = async (req, res, next) => {
       staffId = staffDoc._id;
       // Users CANNOT modify payment amounts or payment status
       staffWage = staffDoc.defaultDailyRate || 600;
-      clientBillingAmount = clientDoc.defaultBillingRatePerStaff || 1000;
+      clientBillingAmount = clientDoc.defaultBillingRatePerStaff || 1200;
       reportedBy = 'Staff User';
       initialStatus = 'Pending Approval';
     }

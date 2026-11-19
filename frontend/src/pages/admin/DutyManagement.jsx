@@ -78,7 +78,7 @@ export const DutyManagement = () => {
     shiftType: 'Full Day (8-10 hrs)',
     hoursWorked: 9,
     staffWage: 750,
-    clientBillingAmount: 1100,
+    clientBillingAmount: 1200,
     location: 'Main Hall',
     rolePerformed: 'Kitchen Helper',
     status: 'Approved',

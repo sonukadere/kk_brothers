@@ -61,7 +61,7 @@ export const HotelsCatering = () => {
     address: '',
     city: 'Indore',
     gstNumber: '',
-    defaultBillingRatePerStaff: 1000,
+    defaultBillingRatePerStaff: 1200,
     creditPeriodDays: 15,
     status: 'active',
     notes: '',
@@ -128,7 +128,7 @@ export const HotelsCatering = () => {
       address: client.address || '',
       city: client.city || 'Indore',
       gstNumber: client.gstNumber || '',
-      defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1000,
+      defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1200,
       creditPeriodDays: client.creditPeriodDays ?? 15,
       status: client.status || 'active',
       notes: client.notes || '',
@@ -663,7 +663,7 @@ export const HotelsCatering = () => {
             <Input
               label="Staff Billing Rate (₹ / worker / shift)"
               type="number"
-              placeholder="1000"
+              placeholder="1200"
               value={formData.defaultBillingRatePerStaff}
               onChange={(e) =>
                 setFormData({
@@ -808,6 +808,7 @@ export const HotelsCatering = () => {
             <Input
               label="Staff Billing Rate (₹)"
               type="number"
+              placeholder="1200"
               value={formData.defaultBillingRatePerStaff}
               onChange={(e) =>
                 setFormData({

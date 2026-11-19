@@ -75,7 +75,7 @@ const clientSchema = new mongoose.Schema(
     },
     defaultBillingRatePerStaff: {
       type: Number,
-      default: 900,
+      default: 1200,
       min: [0, 'Billing rate cannot be negative'],
     },
     creditPeriodDays: {

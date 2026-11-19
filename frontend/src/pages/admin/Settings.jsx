@@ -19,7 +19,7 @@ export const Settings = () => {
     defaultWaiterRate: 600,
     defaultCaptainRate: 800,
     defaultHelperRate: 550,
-    defaultClientBillingRate: 1000,
+    defaultClientBillingRate: 1200,
     defaultCreditPeriod: 15,
   });
 

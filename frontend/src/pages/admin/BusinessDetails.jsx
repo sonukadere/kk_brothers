@@ -68,7 +68,7 @@ export const BusinessDetails = () => {
     address: '',
     city: 'Indore',
     gstNumber: '',
-    defaultBillingRatePerStaff: 1000,
+    defaultBillingRatePerStaff: 1200,
     creditPeriodDays: 15,
     status: 'active',
     notes: '',
@@ -116,7 +116,7 @@ export const BusinessDetails = () => {
       address: client.address || '',
       city: client.city || 'Indore',
       gstNumber: client.gstNumber || '',
-      defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1000,
+      defaultBillingRatePerStaff: client.defaultBillingRatePerStaff ?? 1200,
       creditPeriodDays: client.creditPeriodDays ?? 15,
       status: client.status || 'active',
       notes: client.notes || '',
@@ -549,7 +549,7 @@ export const BusinessDetails = () => {
         />
         <StatCard
           title="Daily Rate Terms"
-          value={`₹${client.defaultBillingRatePerStaff || 900}`}
+          value={`₹${client.defaultBillingRatePerStaff || 1200}`}
           subtitle={`Credit: ${client.creditPeriodDays || 15} days`}
           icon={Building2}
           color="indigo"
@@ -827,7 +827,7 @@ export const BusinessDetails = () => {
               <div className="flex justify-between py-1 border-b border-slate-50">
                 <span className="text-slate-500">Billing Rate Per Staff:</span>
                 <span className="font-bold text-indigo-700">
-                  ₹{client.defaultBillingRatePerStaff || 900} / worker / shift
+                  ₹{client.defaultBillingRatePerStaff || 1200} / worker / shift
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-50">
@@ -945,6 +945,7 @@ export const BusinessDetails = () => {
             <Input
               label="Billing Rate Per Staff (₹)"
               type="number"
+              placeholder="1200"
               value={editFormData.defaultBillingRatePerStaff}
               onChange={(e) =>
                 setEditFormData({
