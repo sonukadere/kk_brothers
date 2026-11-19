@@ -8,14 +8,12 @@ import {
   ShieldCheck,
   User,
   ChefHat,
-  Sparkles,
   Lock,
   Mail,
   Phone,
   ArrowRight,
   Eye,
   EyeOff,
-  Database,
   ShieldAlert,
   IdCard,
   UserPlus,
@@ -114,37 +112,6 @@ export const Login = () => {
     }
   };
 
-  // Quick Demo Login
-  const handleQuickDemoLogin = async (role, type = 'mobile') => {
-    setIsLoading(true);
-    let id;
-    let pass;
-
-    if (role === 'admin') {
-      id = type === 'mobile' ? '6264791823' : 'admin@kkbrothers.com';
-      pass = 'Admin@123';
-      setLoginMode('admin-login');
-    } else {
-      id = type === 'staffId' ? 'STF-0001' : '9329148985';
-      pass = 'Staff@123';
-      setLoginMode('staff-login');
-    }
-
-    setIdentifier(id);
-    setPassword(pass);
-
-    const result = await login(id, pass);
-    setIsLoading(false);
-
-    if (result.success) {
-      if (result.user.role === 'admin') {
-        navigate('/dashboard');
-      } else {
-        navigate('/user/dashboard');
-      }
-    }
-  };
-
   const isStaffLogin = loginMode === 'staff-login';
   const isStaffRegister = loginMode === 'staff-register';
   const isAdminLogin = loginMode === 'admin-login';
@@ -228,55 +195,6 @@ export const Login = () => {
           {/* MODE 1 & 3: SIGN IN FORM (STAFF OR ADMIN) */}
           {!isStaffRegister && (
             <>
-              {/* Quick Demo Login Grid */}
-              <div className="mb-5 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    Quick Login Shortcuts
-                  </span>
-                  <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                    <Database className="w-2.5 h-2.5" /> Ready
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Staff Worker Shortcut */}
-                  <div
-                    onClick={() => handleQuickDemoLogin('user', 'mobile')}
-                    className={`p-2.5 rounded-lg border shadow-2xs space-y-1 cursor-pointer transition ${
-                      isStaffLogin
-                        ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-300'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">Staff Worker</span>
-                      <ChefHat className="w-3.5 h-3.5 text-emerald-600" />
-                    </div>
-                    <div className="text-[10px] text-slate-500">Kishan (9329148985)</div>
-                    <div className="text-[10px] text-emerald-700 font-medium">Click to fill & login &rarr;</div>
-                  </div>
-
-                  {/* Admin Shortcut */}
-                  <div
-                    onClick={() => handleQuickDemoLogin('admin', 'mobile')}
-                    className={`p-2.5 rounded-lg border shadow-2xs space-y-1 cursor-pointer transition ${
-                      isAdminLogin
-                        ? 'bg-indigo-50/60 border-indigo-300 ring-1 ring-indigo-300'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900">Admin</span>
-                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                    </div>
-                    <div className="text-[10px] text-slate-500">Full System Control</div>
-                    <div className="text-[10px] text-indigo-700 font-medium">Click to fill & login &rarr;</div>
-                  </div>
-                </div>
-              </div>
-
               {/* Login Form */}
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 {isStaffLogin ? (
