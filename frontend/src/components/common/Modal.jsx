@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
 export const Modal = ({
@@ -9,11 +9,15 @@ export const Modal = ({
   children,
   footer,
   maxWidth = 'max-w-lg',
+  closeOnClickOutside = false,
+  closeOnEsc = true,
 }) => {
+  const [isBumping, setIsBumping] = useState(false);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+      if (e.key === 'Escape' && isOpen && closeOnEsc) {
+        if (onClose) onClose();
       }
     };
     if (isOpen) {
@@ -26,22 +30,34 @@ export const Modal = ({
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeOnEsc]);
 
   if (!isOpen) return null;
+
+  const handleBackdropClick = (e) => {
+    if (closeOnClickOutside) {
+      if (onClose) onClose();
+    } else {
+      // Gentle bump animation to signify modal requires explicit Cancel or X click
+      setIsBumping(true);
+      setTimeout(() => setIsBumping(false), 250);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-200"
-        onClick={onClose}
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-200"
+        onClick={handleBackdropClick}
       />
 
-      {/* Modal Dialog */}
-      <div className="min-h-full flex items-center justify-center p-4">
+      {/* Modal Dialog Container */}
+      <div className="min-h-full flex items-center justify-center p-4 relative z-10 pointer-events-none">
         <div
-          className={`relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${maxWidth} overflow-hidden transform transition-all duration-200 z-10 animate-in fade-in zoom-in-95`}
+          className={`relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full ${maxWidth} overflow-hidden transform transition-all duration-200 pointer-events-auto animate-in fade-in zoom-in-95 ${
+            isBumping ? 'scale-[1.015] ring-2 ring-indigo-500/40 transition-transform duration-150' : ''
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -51,8 +67,10 @@ export const Modal = ({
               {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Close"
             >
               <X className="w-5 h-5" />
             </button>
