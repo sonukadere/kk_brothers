@@ -6,6 +6,10 @@ export const authApi = {
     return await axiosClient.post('/auth/login', { identifier, password });
   },
 
+  registerStaff: async (staffData) => {
+    return await axiosClient.post('/auth/register', staffData);
+  },
+
   getMe: async () => {
     return await axiosClient.get('/auth/me');
   },

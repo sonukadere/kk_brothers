@@ -163,14 +163,122 @@ exports.login = async (req, res, next) => {
   }
 };
 
-// @desc    Public registration endpoint (Disabled by security policy)
+// @desc    Register a new Staff Worker account
 // @route   POST /api/auth/register
-// @access  Disabled (Only Admin can create user accounts via /api/users)
-exports.register = async (req, res) => {
-  return res.status(403).json({
-    success: false,
-    message: 'Public user registration is disabled. Only Administrators can create user accounts.',
-  });
+// @access  Public
+exports.register = async (req, res, next) => {
+  try {
+    const { name, phone, password, designation, city, address, email } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide staff worker full name.',
+      });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a 10-digit mobile number.',
+      });
+    }
+
+    const cleanPhone = phone.replace(/[^\d]/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mobile number must be a valid 10-digit number.',
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    // Role allowed for public registration is strictly 'user' (staff)
+    const validDesignation = designation === 'Chef' ? 'Chef' : 'Kitchen Helper';
+
+    // 1. Check if a User already exists with this phone
+    const existingUser = await User.findOne({ phone: cleanPhone });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'An account with this mobile number already exists. Please sign in.',
+      });
+    }
+
+    // 2. Check if a Staff record already exists for this phone
+    let staff = await Staff.findOne({ phone: cleanPhone });
+    if (staff && staff.user) {
+      return res.status(400).json({
+        success: false,
+        message: 'A staff profile is already linked to this mobile number. Please sign in.',
+      });
+    }
+
+    const defaultRate = validDesignation === 'Chef' ? 800 : 600;
+
+    if (staff) {
+      // Existing unlinked staff record: link user to it
+      staff.name = name.trim();
+      staff.designation = validDesignation;
+      staff.defaultDailyRate = defaultRate;
+      staff.defaultHourlyRate = Math.round(defaultRate / 8);
+      if (address || city) staff.address = address ? address.trim() : (city ? city.trim() : 'Indore');
+      await staff.save();
+    } else {
+      // Create new Staff member
+      staff = await Staff.create({
+        name: name.trim(),
+        phone: cleanPhone,
+        designation: validDesignation,
+        defaultDailyRate: defaultRate,
+        defaultHourlyRate: Math.round(defaultRate / 8),
+        address: address ? address.trim() : (city ? city.trim() : 'Indore'),
+        status: 'active',
+        joiningDate: new Date(),
+        joinDate: new Date(),
+      });
+    }
+
+    // Generate clean email for staff worker
+    const cleanEmail =
+      email && email.trim()
+        ? email.trim().toLowerCase()
+        : `${staff.staffCode.toLowerCase().replace(/[^a-z0-9]/g, '')}@staff.kkbrothers.com`;
+
+    // Ensure email is unique
+    const emailConflict = await User.findOne({ email: cleanEmail });
+    const finalEmail = emailConflict
+      ? `${cleanPhone}@staff.kkbrothers.com`
+      : cleanEmail;
+
+    const user = await User.create({
+      name: name.trim(),
+      email: finalEmail,
+      phone: cleanPhone,
+      password,
+      role: 'user',
+      isActive: true,
+      staffProfile: staff._id,
+    });
+
+    staff.user = user._id;
+    await staff.save();
+
+    sendTokenResponse(
+      user,
+      201,
+      res,
+      `Staff registered successfully! Staff ID: ${staff.staffCode}`
+    );
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Get current logged in user profile

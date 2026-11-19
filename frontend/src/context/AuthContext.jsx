@@ -67,6 +67,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Register a new staff worker
+  const registerStaff = async (staffData) => {
+    try {
+      const res = await authApi.registerStaff(staffData);
+      if (res.success) {
+        localStorage.setItem('kk_token', res.token);
+        localStorage.setItem('kk_user', JSON.stringify(res.user));
+        setToken(res.token);
+        setUser(res.user);
+        toast.success(res.message || 'Staff registered successfully!');
+        return { success: true, user: res.user };
+      }
+      return { success: false, message: res.message };
+    } catch (error) {
+      toast.error(error.message || 'Registration failed.');
+      return { success: false, message: error.message };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('kk_token');
     localStorage.removeItem('kk_user');
@@ -130,6 +149,7 @@ export const AuthProvider = ({ children }) => {
     isUser: user?.role === 'user' && user?.isActive,
     loading,
     login,
+    registerStaff,
     logout,
     switchDemoRole,
     refreshUser,
