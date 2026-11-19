@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authApi } from '../../api/authApi';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { PasswordInput } from '../../components/common/PasswordInput';
@@ -14,14 +15,13 @@ import {
   Phone,
   ArrowRight,
   ArrowLeft,
-  Eye,
-  EyeOff,
   UserPlus,
   MapPin,
   CheckCircle2,
   AlertCircle,
   Briefcase,
-  Sparkles,
+  KeyRound,
+  HelpCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,7 +30,7 @@ export const Login = ({ initialMode }) => {
   const navigate = useNavigate();
   const { login, registerStaff } = useAuth();
 
-  // Determine active view mode: 'staff-login' | 'staff-register' | 'admin-login'
+  // Determine active view mode: 'staff-login' | 'staff-register' | 'admin-login' | 'forgot-password'
   const determineInitialMode = () => {
     if (initialMode) return initialMode;
     if (location.pathname === '/admin/login' || location.search.includes('mode=admin')) {
@@ -39,10 +39,14 @@ export const Login = ({ initialMode }) => {
     if (location.search.includes('mode=register')) {
       return 'staff-register';
     }
+    if (location.search.includes('mode=forgot')) {
+      return 'forgot-password';
+    }
     return 'staff-login';
   };
 
   const [loginMode, setLoginMode] = useState(determineInitialMode);
+  const [previousMode, setPreviousMode] = useState('staff-login');
 
   // Sync mode if route or search param changes
   useEffect(() => {
@@ -59,7 +63,6 @@ export const Login = ({ initialMode }) => {
   // Staff & Admin Login Form State
   const [identifier, setIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [registrationBanner, setRegistrationBanner] = useState(null);
 
   // Staff Registration Form State
@@ -77,31 +80,42 @@ export const Login = ({ initialMode }) => {
   const [touched, setTouched] = useState({});
   const [mobileConflictError, setMobileConflictError] = useState(null);
 
+  // =========================================================
+  // Forgot Password State
+  // =========================================================
+  const [resetIdentifier, setResetIdentifier] = useState('');
+  const [resetStep, setResetStep] = useState(1); // 1 = Verify Account, 2 = Set New Password
+  const [verifiedAccount, setVerifiedAccount] = useState(null);
+  const [newResetPassword, setNewResetPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+  const [resetError, setResetError] = useState(null);
+  const [isResetLoading, setIsResetLoading] = useState(false);
+
   // Refs for auto-focus
   const nameInputRef = useRef(null);
   const identifierInputRef = useRef(null);
   const loginPasswordRef = useRef(null);
+  const resetInputRef = useRef(null);
 
-  // Auto-focus when switching to Register tab
+  // Auto-focus when switching tabs/modes
   useEffect(() => {
-    if (loginMode === 'staff-register') {
-      const timer = setTimeout(() => {
+    const timer = setTimeout(() => {
+      if (loginMode === 'staff-register') {
         nameInputRef.current?.focus();
-      }, 80);
-      return () => clearTimeout(timer);
-    } else if (loginMode === 'staff-login' || loginMode === 'admin-login') {
-      const timer = setTimeout(() => {
+      } else if (loginMode === 'staff-login' || loginMode === 'admin-login') {
         if (!identifier) {
           identifierInputRef.current?.focus();
         } else {
           loginPasswordRef.current?.focus();
         }
-      }, 80);
-      return () => clearTimeout(timer);
-    }
-  }, [loginMode]);
+      } else if (loginMode === 'forgot-password' && resetStep === 1) {
+        resetInputRef.current?.focus();
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [loginMode, resetStep]);
 
-  // Real-time Field Validation Rules
+  // Real-time Field Validation Rules for Registration
   const validateField = (fieldName, value, allValues = registerData) => {
     switch (fieldName) {
       case 'name': {
@@ -187,11 +201,97 @@ export const Login = ({ initialMode }) => {
     }
   };
 
+  // Open Forgot Password screen
+  const openForgotPassword = () => {
+    setPreviousMode(loginMode === 'admin-login' ? 'admin-login' : 'staff-login');
+    setResetIdentifier(identifier || '');
+    setResetStep(1);
+    setVerifiedAccount(null);
+    setNewResetPassword('');
+    setConfirmResetPassword('');
+    setResetError(null);
+    setLoginMode('forgot-password');
+  };
+
+  // =========================================================
+  // Forgot Password: Step 1 Verify Identifier
+  // =========================================================
+  const handleVerifyResetIdentifier = async (e) => {
+    e.preventDefault();
+    if (!resetIdentifier.trim()) {
+      toast.error('Please enter your registered mobile number, Staff ID, or email.');
+      return;
+    }
+
+    setIsResetLoading(true);
+    setResetError(null);
+
+    try {
+      const res = await authApi.verifyResetIdentifier(resetIdentifier.trim());
+      if (res.success) {
+        setVerifiedAccount(res.data);
+        setResetStep(2);
+        toast.success(res.message || 'Account verified successfully!');
+      } else {
+        setResetError(res.message || 'No account found matching these details.');
+      }
+    } catch (err) {
+      setResetError(err.message || 'Account verification failed. Please check details.');
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  // =========================================================
+  // Forgot Password: Step 2 Set New Password
+  // =========================================================
+  const handlePerformPasswordReset = async (e) => {
+    e.preventDefault();
+
+    if (!newResetPassword || newResetPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long.');
+      return;
+    }
+
+    if (newResetPassword !== confirmResetPassword) {
+      toast.error('Passwords do not match. Please verify.');
+      return;
+    }
+
+    setIsResetLoading(true);
+
+    try {
+      const res = await authApi.resetPasswordWithIdentifier(
+        resetIdentifier.trim(),
+        newResetPassword
+      );
+      if (res.success) {
+        toast.success('Password updated successfully! Please sign in.');
+        setIdentifier(resetIdentifier.trim());
+        setRegistrationBanner({
+          phone: resetIdentifier.trim(),
+          name: verifiedAccount?.name || 'Worker',
+          isReset: true,
+        });
+        setLoginMode(previousMode || 'staff-login');
+        setResetStep(1);
+        setVerifiedAccount(null);
+        setNewResetPassword('');
+        setConfirmResetPassword('');
+      } else {
+        toast.error(res.message || 'Password reset failed.');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Password reset failed.');
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   // Handle Staff Registration Submission
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched
     const allTouched = {
       name: true,
       phone: true,
@@ -202,7 +302,6 @@ export const Login = ({ initialMode }) => {
     };
     setTouched(allTouched);
 
-    // Validate all fields
     const newErrors = {};
     Object.keys(allTouched).forEach((field) => {
       const err = validateField(field, registerData[field], registerData);
@@ -211,7 +310,6 @@ export const Login = ({ initialMode }) => {
 
     setErrors(newErrors);
 
-    // If any error exists, do not submit
     if (Object.keys(newErrors).length > 0) {
       toast.error('Please resolve the highlighted form errors.');
       return;
@@ -230,7 +328,7 @@ export const Login = ({ initialMode }) => {
         city: registerData.city.trim() || 'Indore',
         password: registerData.password,
       },
-      false // Do not auto-login; switch to login tab with prefill per requirements
+      false
     );
 
     setIsLoading(false);
@@ -241,9 +339,7 @@ export const Login = ({ initialMode }) => {
         phone: cleanPhone,
         name: registerData.name.trim(),
       });
-      // Switch to Staff Login tab with mobile number prefilled
       switchToLogin(cleanPhone);
-      // Clear password in registration form
       setRegisterData((prev) => ({
         ...prev,
         password: '',
@@ -251,7 +347,6 @@ export const Login = ({ initialMode }) => {
       }));
     } else {
       const msg = result.message || 'Registration failed.';
-      // Check if error is mobile conflict
       if (
         msg.toLowerCase().includes('already') ||
         msg.toLowerCase().includes('mobile') ||
@@ -296,14 +391,17 @@ export const Login = ({ initialMode }) => {
   const isStaffLogin = loginMode === 'staff-login';
   const isStaffRegister = loginMode === 'staff-register';
   const isAdminLogin = loginMode === 'admin-login';
+  const isForgotPassword = loginMode === 'forgot-password';
 
-  // Computed field validation status
   const isNameValid = touched.name && !errors.name && registerData.name.trim().length >= 3;
   const isPhoneValid = touched.phone && !errors.phone && registerData.phone.length === 10;
   const isCityValid = touched.city && !errors.city && registerData.city.trim().length > 0;
   const isConfirmMatch =
     registerData.confirmPassword.length > 0 &&
     registerData.confirmPassword === registerData.password;
+
+  const isResetPasswordMatch =
+    confirmResetPassword.length > 0 && confirmResetPassword === newResetPassword;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/40 to-emerald-50/30 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 relative selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
@@ -330,8 +428,8 @@ export const Login = ({ initialMode }) => {
 
         {/* Card Component */}
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-200/80 p-6 sm:p-8 transition-all relative">
-          {/* Top Tabs (Only Staff Login and Register Staff) */}
-          {!isAdminLogin ? (
+          {/* Top Tabs (Only on normal Staff Login vs Register Staff mode) */}
+          {!isAdminLogin && !isForgotPassword && (
             <div
               role="tablist"
               aria-label="Staff Authentication Mode"
@@ -375,8 +473,10 @@ export const Login = ({ initialMode }) => {
                 <span>Register Staff</span>
               </button>
             </div>
-          ) : (
-            /* Admin Mode Banner Header */
+          )}
+
+          {/* Admin Mode Header */}
+          {isAdminLogin && !isForgotPassword && (
             <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
@@ -399,9 +499,164 @@ export const Login = ({ initialMode }) => {
           )}
 
           {/* ========================================================= */}
+          {/* VIEW: FORGOT PASSWORD                                     */}
+          {/* ========================================================= */}
+          {isForgotPassword && (
+            <div className="animate-in fade-in duration-200">
+              {/* Back to sign in header */}
+              <div className="mb-5 pb-3 border-b border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setLoginMode(previousMode || 'staff-login')}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Sign In</span>
+                </button>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Forgot Password</h2>
+                    <p className="text-xs text-slate-600">
+                      {resetStep === 1
+                        ? 'Verify your account details to reset your password'
+                        : 'Set a new password for your account'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* STEP 1: Verify Identifier */}
+              {resetStep === 1 && (
+                <form onSubmit={handleVerifyResetIdentifier} className="space-y-4">
+                  <Input
+                    ref={resetInputRef}
+                    id="reset-identifier"
+                    label="Mobile Number or Staff ID"
+                    required
+                    placeholder="e.g. 9876543210 or STF-0001"
+                    value={resetIdentifier}
+                    onChange={(e) => {
+                      setResetIdentifier(e.target.value);
+                      setResetError(null);
+                    }}
+                    leftIcon={<Phone className="w-4 h-4 text-emerald-600" />}
+                    helperText="Enter your 10-digit registered mobile number, Staff ID, or Admin email."
+                    error={resetError}
+                    focusColor="emerald"
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="success"
+                    size="lg"
+                    className="w-full h-12 text-sm font-bold shadow-md rounded-xl"
+                    isLoading={isResetLoading}
+                    disabled={isResetLoading}
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    {isResetLoading ? 'Verifying Account...' : 'Verify Account & Continue'}
+                  </Button>
+
+                  {/* Admin Helpline Notice */}
+                  <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                      <HelpCircle className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                      <span>Need Instant Help?</span>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed">
+                      You can also call or WhatsApp management for immediate password reset:{' '}
+                      <a
+                        href="tel:6264791823"
+                        className="font-bold text-slate-800 hover:text-indigo-600 underline"
+                      >
+                        +91 6264791823 (Sonu Kadere)
+                      </a>
+                    </p>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 2: Enter New Password */}
+              {resetStep === 2 && verifiedAccount && (
+                <form onSubmit={handlePerformPasswordReset} className="space-y-4">
+                  {/* Verified Worker Confirmation Banner */}
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between gap-2 text-xs text-emerald-900">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="font-bold">{verifiedAccount.name}</span>
+                        <span className="text-emerald-700 ml-1.5">
+                          ({verifiedAccount.designation})
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setResetStep(1)}
+                      className="text-[11px] font-bold text-emerald-800 underline hover:no-underline cursor-pointer"
+                    >
+                      Change
+                    </button>
+                  </div>
+
+                  {/* New Password */}
+                  <PasswordInput
+                    id="new-reset-password"
+                    label="New Password"
+                    required
+                    placeholder="Create a new password"
+                    value={newResetPassword}
+                    onChange={(e) => setNewResetPassword(e.target.value)}
+                    showStrengthMeter={true}
+                    showHints={true}
+                    autoComplete="new-password"
+                    focusColor="emerald"
+                  />
+
+                  {/* Confirm New Password */}
+                  <div>
+                    <PasswordInput
+                      id="confirm-reset-password"
+                      label="Confirm New Password"
+                      required
+                      placeholder="Re-enter your new password"
+                      value={confirmResetPassword}
+                      onChange={(e) => setConfirmResetPassword(e.target.value)}
+                      autoComplete="new-password"
+                      success={isResetPasswordMatch}
+                      focusColor="emerald"
+                    />
+                    {isResetPasswordMatch && confirmResetPassword.length >= 6 && (
+                      <p className="mt-1.5 text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Passwords match</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="success"
+                    size="lg"
+                    className="w-full h-12 text-sm font-bold shadow-md rounded-xl"
+                    isLoading={isResetLoading}
+                    disabled={isResetLoading}
+                    rightIcon={<CheckCircle2 className="w-4 h-4" />}
+                  >
+                    {isResetLoading ? 'Updating Password...' : 'Save New Password & Sign In'}
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================= */}
           {/* TAB 1: REGISTER STAFF FORM                                */}
           {/* ========================================================= */}
-          {isStaffRegister && (
+          {isStaffRegister && !isForgotPassword && (
             <div
               id="panel-staff-register"
               role="tabpanel"
@@ -603,22 +858,24 @@ export const Login = ({ initialMode }) => {
           {/* ========================================================= */}
           {/* TAB 2: STAFF LOGIN & ADMIN LOGIN FORM                    */}
           {/* ========================================================= */}
-          {!isStaffRegister && (
+          {!isStaffRegister && !isForgotPassword && (
             <div
               id="panel-staff-login"
               role="tabpanel"
               aria-labelledby={isAdminLogin ? undefined : 'tab-staff-login'}
               className="animate-in fade-in duration-200"
             >
-              {/* Registration Success Banner on Login Screen */}
+              {/* Registration / Reset Success Banner on Login Screen */}
               {registrationBanner && (
                 <div className="mb-4 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold">Registration Successful!</span>
+                    <span className="font-bold">
+                      {registrationBanner.isReset ? 'Password Reset Successful!' : 'Registration Successful!'}
+                    </span>
                     <p className="text-emerald-700 mt-0.5">
-                      Welcome, {registrationBanner.name}! Your mobile{' '}
-                      <span className="font-mono font-bold">+91 {registrationBanner.phone}</span> is prefilled.
+                      Welcome, {registrationBanner.name}! Your account{' '}
+                      <span className="font-mono font-bold">{registrationBanner.phone}</span> is prefilled.
                       Enter your password to sign in.
                     </p>
                   </div>
@@ -654,7 +911,7 @@ export const Login = ({ initialMode }) => {
                   focusColor={isAdminLogin ? 'indigo' : 'emerald'}
                 />
 
-                {/* Password Input */}
+                {/* Password Input with "Forgot Password?" Action Link */}
                 <PasswordInput
                   ref={loginPasswordRef}
                   id="login-password"
@@ -665,6 +922,15 @@ export const Login = ({ initialMode }) => {
                   onChange={(e) => setLoginPassword(e.target.value)}
                   autoComplete="current-password"
                   focusColor={isAdminLogin ? 'indigo' : 'emerald'}
+                  rightLabelAction={
+                    <button
+                      type="button"
+                      onClick={openForgotPassword}
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+                    >
+                      Forgot Password?
+                    </button>
+                  }
                 />
 
                 {/* Submit Login Button */}
@@ -704,7 +970,7 @@ export const Login = ({ initialMode }) => {
         </div>
 
         {/* Small Muted Admin Login Link Below Card (Strictly Required) */}
-        {!isAdminLogin ? (
+        {!isAdminLogin && !isForgotPassword && (
           <div className="text-center mt-5">
             <button
               type="button"
@@ -719,7 +985,9 @@ export const Login = ({ initialMode }) => {
               <span className="font-semibold text-slate-600 hover:underline">Admin login &rarr;</span>
             </button>
           </div>
-        ) : (
+        )}
+
+        {isAdminLogin && !isForgotPassword && (
           <div className="text-center mt-5">
             <button
               type="button"

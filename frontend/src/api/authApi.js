@@ -6,6 +6,14 @@ export const authApi = {
     return await axiosClient.post('/auth/login', { identifier, password });
   },
 
+  verifyResetIdentifier: async (identifier) => {
+    return await axiosClient.post('/auth/forgot-password-verify', { identifier });
+  },
+
+  resetPasswordWithIdentifier: async (identifier, newPassword) => {
+    return await axiosClient.post('/auth/reset-password', { identifier, newPassword });
+  },
+
   registerStaff: async (staffData) => {
     return await axiosClient.post('/auth/register', staffData);
   },

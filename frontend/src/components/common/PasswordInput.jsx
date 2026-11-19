@@ -16,6 +16,7 @@ export const PasswordInput = forwardRef(
       placeholder = 'Create a password',
       showStrengthMeter = false,
       showHints = false,
+      rightLabelAction = null,
       focusColor = 'emerald', // 'emerald' | 'indigo'
       className = '',
       autoComplete = 'new-password',
@@ -65,11 +66,14 @@ export const PasswordInput = forwardRef(
             >
               {label} {required && <span className="text-rose-500" aria-hidden="true">*</span>}
             </label>
-            {showStrengthMeter && strength && (
-              <span className={`text-xs font-bold tracking-tight ${strength.color}`}>
-                {strength.text}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {rightLabelAction}
+              {showStrengthMeter && strength && (
+                <span className={`text-xs font-bold tracking-tight ${strength.color}`}>
+                  {strength.text}
+                </span>
+              )}
+            </div>
           </div>
         )}
 

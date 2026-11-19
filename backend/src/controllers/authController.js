@@ -393,3 +393,199 @@ exports.updatePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Verify account identifier for password reset
+// @route   POST /api/auth/forgot-password-verify
+// @access  Public
+exports.verifyResetIdentifier = async (req, res, next) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your registered mobile number, Staff ID, or email.',
+      });
+    }
+
+    const cleanId = identifier.trim();
+    let query;
+    let matchedStaff = null;
+
+    if (cleanId.includes('@')) {
+      query = { email: cleanId.toLowerCase() };
+    } else if (/^stf[\s-]?\d+/i.test(cleanId)) {
+      const cleanCode = cleanId.toUpperCase().replace(/\s+/g, '');
+      const withHyphen = cleanCode.replace(/^(STF)(\d+)$/, '$1-$2');
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { staffCode: cleanCode },
+          { staffCode: withHyphen },
+          { staffId: cleanCode },
+          { staffId: withHyphen },
+        ],
+      });
+      if (matchedStaff && matchedStaff.user) {
+        query = { _id: matchedStaff.user };
+      } else if (matchedStaff) {
+        query = { staffProfile: matchedStaff._id };
+      } else {
+        query = { email: cleanId.toLowerCase() };
+      }
+    } else {
+      const digitsOnly = cleanId.replace(/\D/g, '');
+      const last10 = digitsOnly.slice(-10);
+      const conditions = [
+        { phone: cleanId },
+        { phone: digitsOnly },
+        { email: cleanId.toLowerCase() },
+      ];
+      if (last10 && last10.length >= 7) {
+        conditions.push({ phone: { $regex: last10 + '$', $options: 'i' } });
+      }
+
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { phone: cleanId },
+          { phone: digitsOnly },
+          ...(last10.length >= 7 ? [{ phone: { $regex: last10 + '$' } }] : []),
+        ],
+      });
+
+      if (matchedStaff && matchedStaff.user) {
+        conditions.push({ _id: matchedStaff.user });
+      }
+      query = { $or: conditions };
+    }
+
+    let user = await User.findOne(query).populate('staffProfile');
+
+    if (!user && !matchedStaff) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found matching this mobile number or Staff ID.',
+      });
+    }
+
+    const accountName = user ? user.name : matchedStaff.name;
+    const accountRole = user ? user.role : 'user';
+    const designation = matchedStaff?.designation || (accountRole === 'admin' ? 'Administrator' : 'Staff Worker');
+
+    return res.status(200).json({
+      success: true,
+      message: `Account verified: ${accountName} (${designation})`,
+      data: {
+        name: accountName,
+        role: accountRole,
+        designation,
+        identifier: cleanId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password with verified identifier (public)
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPasswordWithIdentifier = async (req, res, next) => {
+  try {
+    const { identifier, newPassword } = req.body;
+
+    if (!identifier || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Identifier and new password are required.',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long.',
+      });
+    }
+
+    const cleanId = identifier.trim();
+    let query;
+    let matchedStaff = null;
+
+    if (cleanId.includes('@')) {
+      query = { email: cleanId.toLowerCase() };
+    } else if (/^stf[\s-]?\d+/i.test(cleanId)) {
+      const cleanCode = cleanId.toUpperCase().replace(/\s+/g, '');
+      const withHyphen = cleanCode.replace(/^(STF)(\d+)$/, '$1-$2');
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { staffCode: cleanCode },
+          { staffCode: withHyphen },
+          { staffId: cleanCode },
+          { staffId: withHyphen },
+        ],
+      });
+      if (matchedStaff && matchedStaff.user) {
+        query = { _id: matchedStaff.user };
+      } else if (matchedStaff) {
+        query = { staffProfile: matchedStaff._id };
+      } else {
+        query = { email: cleanId.toLowerCase() };
+      }
+    } else {
+      const digitsOnly = cleanId.replace(/\D/g, '');
+      const last10 = digitsOnly.slice(-10);
+      const conditions = [
+        { phone: cleanId },
+        { phone: digitsOnly },
+        { email: cleanId.toLowerCase() },
+      ];
+      if (last10 && last10.length >= 7) {
+        conditions.push({ phone: { $regex: last10 + '$', $options: 'i' } });
+      }
+
+      matchedStaff = await Staff.findOne({
+        $or: [
+          { phone: cleanId },
+          { phone: digitsOnly },
+          ...(last10.length >= 7 ? [{ phone: { $regex: last10 + '$' } }] : []),
+        ],
+      });
+
+      if (matchedStaff && matchedStaff.user) {
+        conditions.push({ _id: matchedStaff.user });
+      }
+      query = { $or: conditions };
+    }
+
+    let user = await User.findOne(query).select('+password').populate('staffProfile');
+
+    if (!user && matchedStaff) {
+      const cleanEmail = `${matchedStaff.staffCode.toLowerCase().replace(/[^a-z0-9]/g, '')}@staff.kkbrothers.com`;
+      user = await User.create({
+        name: matchedStaff.name,
+        email: cleanEmail,
+        phone: matchedStaff.phone,
+        password: newPassword,
+        role: 'user',
+        staffProfile: matchedStaff._id,
+        isActive: matchedStaff.status === 'active',
+      });
+      matchedStaff.user = user._id;
+      await matchedStaff.save();
+    } else if (user) {
+      user.password = newPassword;
+      await user.save();
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found matching this mobile number or Staff ID.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successfully! You can now sign in with your new password.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
