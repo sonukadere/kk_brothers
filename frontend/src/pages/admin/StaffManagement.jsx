@@ -230,7 +230,7 @@ export const StaffManagement = () => {
       render: (val, row) => (
         <span
           onClick={() => navigate(`/staff/${row._id}`)}
-          className="font-mono text-xs font-bold text-indigo-700 hover:text-indigo-900 cursor-pointer underline decoration-indigo-300 underline-offset-2"
+          className="font-mono text-xs font-bold text-indigo-700 hover:text-indigo-900 cursor-pointer underline decoration-indigo-300 underline-offset-2 whitespace-nowrap"
         >
           {val || row.staffId || '—'}
         </span>
@@ -398,28 +398,29 @@ export const StaffManagement = () => {
       />
 
       {/* Module Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 w-full overflow-x-auto">
         <button
           onClick={() => setActiveTab('staff')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`flex-1 sm:flex-initial pb-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
             activeTab === 'staff'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Users className="w-4 h-4" />
-          Staff Workers Roster ({staffList.length})
+          <Users className="w-4 h-4 shrink-0" />
+          <span>Staff Roster ({staffList.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`pb-3 px-4 text-sm font-semibold border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`flex-1 sm:flex-initial pb-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 transition cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap ${
             activeTab === 'users'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <ShieldCheck className="w-4 h-4" />
-          User Accounts & Login Credentials
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span className="hidden sm:inline">User Accounts & Login Credentials</span>
+          <span className="sm:hidden">User Logins</span>
         </button>
       </div>
 
@@ -470,7 +471,7 @@ export const StaffManagement = () => {
             </form>
           </Card>
 
-          {/* Staff Table */}
+          {/* Staff Table & Mobile Cards */}
           <Card>
             <CardHeader>
               <div>
@@ -481,23 +482,161 @@ export const StaffManagement = () => {
                 </p>
               </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table
-                columns={columns}
-                data={staffList}
-                isLoading={isLoading}
-                emptyTitle="No staff workers found"
-                emptyDescription="No workers found matching your filter criteria. Click below to add a worker."
-                emptyAction={
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    onClick={() => setIsAddModalOpen(true)}
-                  >
-                    Add Staff Member
-                  </Button>
-                }
-              />
+            <CardContent className="p-0 sm:p-0">
+              {/* MOBILE VIEW: CLEAN STAFF CARDS (block md:hidden) */}
+              <div className="block md:hidden p-3 space-y-3">
+                {isLoading ? (
+                  <div className="py-12 flex justify-center">
+                    <LoadingSpinner text="Loading staff workers..." />
+                  </div>
+                ) : staffList.length === 0 ? (
+                  <div className="py-8 px-4 text-center">
+                    <p className="text-sm font-semibold text-slate-700">No staff workers found</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      No workers found matching your filter criteria.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      className="mt-4"
+                      onClick={() => setIsAddModalOpen(true)}
+                    >
+                      Add Staff Member
+                    </Button>
+                  </div>
+                ) : (
+                  staffList.map((s) => (
+                    <div
+                      key={s._id}
+                      className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs hover:border-indigo-300 transition-all"
+                    >
+                      {/* Top Row: Avatar, Name, Designation & Status */}
+                      <div className="flex items-start justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+                        <div
+                          className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
+                          onClick={() => navigate(`/staff/${s._id}`)}
+                        >
+                          {s.profilePhoto ? (
+                            <img
+                              src={s.profilePhoto}
+                              alt={s.name}
+                              className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm uppercase shrink-0">
+                              {s.name ? s.name.slice(0, 2) : 'ST'}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-bold text-slate-900 text-sm hover:text-indigo-600 transition truncate">
+                                {s.name}
+                              </h4>
+                              <span className="font-mono text-[11px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded whitespace-nowrap">
+                                {s.staffCode || s.staffId}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                              <span>{s.designation}</span>
+                              {s.phone && (
+                                <>
+                                  <span>•</span>
+                                  <a
+                                    href={`tel:${s.phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="font-mono text-slate-600 hover:text-indigo-600 flex items-center gap-0.5"
+                                  >
+                                    <Phone className="w-3 h-3 text-slate-400" />
+                                    <span>{s.phone}</span>
+                                  </a>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <StatusBadge status={s.status} />
+                      </div>
+
+                      {/* Middle: Financial & Duty Stats */}
+                      <div className="grid grid-cols-3 gap-2 py-2.5 text-center text-xs bg-slate-50/70 rounded-lg my-2 px-1">
+                        <div>
+                          <span className="text-[10px] text-slate-500 block uppercase font-medium">Duties</span>
+                          <span className="font-bold text-slate-800">{s.totalDuties ?? 0}</span>
+                          <span className="text-[10px] text-slate-400 block">{s.totalHours ?? 0}h</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 block uppercase font-medium">Earned</span>
+                          <span className="font-bold text-slate-900">₹{(s.totalEarnings ?? 0).toLocaleString()}</span>
+                          <span className="text-[10px] text-emerald-600 block">Paid: ₹{(s.totalPaid ?? 0).toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-500 block uppercase font-medium">Pending</span>
+                          <span className={`font-bold ${(s.totalPending ?? 0) > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                            ₹{(s.totalPending ?? 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom: Action Buttons */}
+                      <div className="flex items-center justify-between gap-1.5 pt-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/staff/${s._id}`)}
+                          className="flex-1 text-xs py-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1" /> View Profile
+                        </Button>
+                        <button
+                          onClick={() => openEditModal(s)}
+                          title="Edit Staff"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(s)}
+                          title={s.status === 'active' ? 'Deactivate Worker' : 'Activate Worker'}
+                          className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                            s.status === 'active'
+                              ? 'border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                              : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                          }`}
+                        >
+                          <Power className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(s)}
+                          title="Delete Worker"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* DESKTOP VIEW: FULL TABLE (hidden md:block) */}
+              <div className="hidden md:block">
+                <Table
+                  columns={columns}
+                  data={staffList}
+                  isLoading={isLoading}
+                  emptyTitle="No staff workers found"
+                  emptyDescription="No workers found matching your filter criteria. Click below to add a worker."
+                  emptyAction={
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => setIsAddModalOpen(true)}
+                    >
+                      Add Staff Member
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
 

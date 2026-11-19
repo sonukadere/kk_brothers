@@ -27,7 +27,7 @@ export const BottomNav = () => {
     ];
 
     return (
-      <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200/90 z-40 shadow-lg px-2 py-1 safe-area-pb">
+      <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200/90 z-50 shadow-lg px-2 py-1 safe-area-pb">
         <div className="flex items-center justify-around">
           {adminTabs.map((tab) => {
             const Icon = tab.icon;
@@ -63,7 +63,7 @@ export const BottomNav = () => {
   ];
 
   return (
-    <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200/90 z-40 shadow-lg px-2 py-1 safe-area-pb">
+    <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200/90 z-50 shadow-lg px-2 py-1 safe-area-pb">
       <div className="flex items-center justify-around">
         {userTabs.map((tab) => {
           const Icon = tab.icon;

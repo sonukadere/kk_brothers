@@ -40,7 +40,7 @@ export const Table = ({
             {columns.map((col, idx) => (
               <th
                 key={col.key || idx}
-                className={`py-3.5 px-4 ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
+                className={`py-3.5 px-4 whitespace-nowrap ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'} ${col.className || ''}`}
               >
                 {col.header}
               </th>

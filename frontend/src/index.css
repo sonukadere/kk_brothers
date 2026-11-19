@@ -30,3 +30,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Ensure react-grab floating toolbar does not overlap mobile bottom navigation */
+@media (max-width: 1024px) {
+  [data-react-grab-toolbar],
+  [data-react-grab-completion],
+  [data-react-grab-toolbar-panel],
+  [data-react-grab-toolbar-toggle],
+  div[data-react-grab-toolbar] {
+    bottom: 74px !important;
+  }
+}
