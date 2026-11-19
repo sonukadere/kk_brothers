@@ -93,120 +93,30 @@ export const AdminDashboard = () => {
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-7xl mx-auto">
-      {/* HEADER WITH INTEGRATED QUICK ACTIONS */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
-        {/* Top Header Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Admin Operations Dashboard</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Live workforce logistics, shift operations, and payment ledgers</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-              onClick={() => loadData({ date: filterDate, staff: selectedStaff, client: selectedClient })}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant={isFiltering ? 'primary' : 'outline'}
-              size="sm"
-              leftIcon={<Filter className="w-3.5 h-3.5" />}
-              onClick={() => setIsFiltering(!isFiltering)}
-            >
-              {isFiltering ? 'Hide Filters' : 'Filter View'}
-            </Button>
-          </div>
+      {/* HEADER ROW (Quick Actions are now in top Navbar) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Admin Operations Dashboard</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Live workforce logistics, shift operations, and payment ledgers</p>
         </div>
 
-        {/* Quick Actions Grid (Shifted into Header) */}
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
-            <span>Quick Actions</span>
-            <span className="text-[10px] text-slate-400 font-normal lowercase hidden sm:inline">shortcut operations</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
-            {/* 1. Add Staff */}
-            <button
-              onClick={() => navigate('/staff')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <UserPlus className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-700 truncate">
-                Add Staff
-              </span>
-            </button>
-
-            {/* 2. Add Hotel */}
-            <button
-              onClick={() => navigate('/clients')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200/80 hover:border-purple-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-purple-700 truncate">
-                Add Hotel
-              </span>
-            </button>
-
-            {/* 3. Add Catering */}
-            <button
-              onClick={() => navigate('/clients')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <UtensilsCrossed className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-amber-700 truncate">
-                Add Catering
-              </span>
-            </button>
-
-            {/* 4. Add Duty */}
-            <button
-              onClick={() => navigate('/duties')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-sky-50 border border-slate-200/80 hover:border-sky-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <PlusCircle className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-sky-700 truncate">
-                Add Duty
-              </span>
-            </button>
-
-            {/* 5. Record Staff Payment */}
-            <button
-              onClick={() => navigate('/staff-payments')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <Wallet className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-700 truncate">
-                Pay Staff
-              </span>
-            </button>
-
-            {/* 6. Receive Client Payment */}
-            <button
-              onClick={() => navigate('/client-payments')}
-              className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-rose-50 border border-slate-200/80 hover:border-rose-300 transition group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                <Receipt className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-rose-700 truncate">
-                Receive Pay
-              </span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={() => loadData({ date: filterDate, staff: selectedStaff, client: selectedClient })}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant={isFiltering ? 'primary' : 'outline'}
+            size="sm"
+            leftIcon={<Filter className="w-3.5 h-3.5" />}
+            onClick={() => setIsFiltering(!isFiltering)}
+          >
+            {isFiltering ? 'Hide Filters' : 'Filter View'}
+          </Button>
         </div>
       </div>
 
