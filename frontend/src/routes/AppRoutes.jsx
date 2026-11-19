@@ -54,6 +54,16 @@ export const AppRoutes = () => {
           )
         }
       />
+      <Route
+        path="/admin/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to={user?.role === 'admin' ? '/dashboard' : '/user/dashboard'} replace />
+          ) : (
+            <Login initialMode="admin-login" />
+          )
+        }
+      />
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/forbidden" element={<Forbidden />} />
 

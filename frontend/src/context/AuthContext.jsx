@@ -75,21 +75,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register a new staff worker
-  const registerStaff = async (staffData) => {
+  const registerStaff = async (staffData, autoLogin = false) => {
     try {
       const res = await authApi.registerStaff(staffData);
       if (res.success) {
-        localStorage.setItem('kk_token', res.token);
-        localStorage.setItem('kk_user', JSON.stringify(res.user));
-        setToken(res.token);
-        setUser(res.user);
-        toast.success(res.message || 'Staff registered successfully!');
-        return { success: true, user: res.user };
+        if (autoLogin) {
+          localStorage.setItem('kk_token', res.token);
+          localStorage.setItem('kk_user', JSON.stringify(res.user));
+          setToken(res.token);
+          setUser(res.user);
+        }
+        return { success: true, user: res.user, message: res.message, token: res.token };
       }
       return { success: false, message: res.message };
     } catch (error) {
-      toast.error(error.message || 'Registration failed.');
-      return { success: false, message: error.message };
+      const message = error.response?.data?.message || error.message || 'Registration failed.';
+      return { success: false, message };
     }
   };
 

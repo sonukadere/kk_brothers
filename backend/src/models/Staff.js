@@ -74,6 +74,7 @@ const staffSchema = new mongoose.Schema(
         'Steward',
         'Helper',
         'Staff',
+        'Driver',
         'Other',
       ],
       default: 'Kitchen Helper',

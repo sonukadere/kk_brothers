@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useEffect, useRef } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toDisplayDate, toIsoDate } from '../../utils/dateUtils';
 
 export const Input = forwardRef(
@@ -8,19 +8,26 @@ export const Input = forwardRef(
       label,
       error,
       helperText,
+      success = false,
       leftIcon,
       rightIcon,
+      prefix,
       required = false,
       className = '',
+      inputClassName = '',
       id,
-      type,
+      type = 'text',
       value,
       onChange,
+      onBlur,
+      focusColor = 'emerald', // 'emerald' | 'indigo'
       ...props
     },
     ref
   ) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const inputId = id || (label ? label.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined);
+    const errorId = inputId ? `${inputId}-error` : undefined;
+    const helperId = inputId ? `${inputId}-helper` : undefined;
     const hiddenDateInputRef = useRef(null);
 
     const isDate = type === 'date';
@@ -36,7 +43,6 @@ export const Input = forwardRef(
       const raw = e.target.value;
       setDisplayDate(raw);
 
-      // If user typed a full DD/MM/YYYY (10 chars), convert and fire onChange
       if (/^\d{2}[\/\-.]\d{2}[\/\-.]\d{4}$/.test(raw.trim())) {
         const iso = toIsoDate(raw);
         if (iso && !isNaN(new Date(iso).getTime())) {
@@ -86,92 +92,137 @@ export const Input = forwardRef(
       }
     };
 
+    const ringFocusClasses =
+      focusColor === 'indigo'
+        ? 'focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600'
+        : 'focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600';
+
     return (
-      <div className="w-full">
+      <div className={`w-full ${className}`}>
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider"
+            className="block text-[13px] font-semibold text-slate-700 mb-1.5 uppercase tracking-wide"
           >
-            {label} {required && <span className="text-rose-500">*</span>}
+            {label} {required && <span className="text-rose-500" aria-hidden="true">*</span>}
           </label>
         )}
-        <div className="relative rounded-lg shadow-2xs">
-          {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              {leftIcon}
+        <div className="relative rounded-xl shadow-2xs flex items-stretch">
+          {/* Optional Prefix Chip (e.g. +91) */}
+          {prefix && (
+            <div className="inline-flex items-center px-3.5 bg-slate-50 border border-r-0 border-slate-300 rounded-l-xl text-slate-700 font-semibold text-sm select-none shrink-0">
+              {prefix}
             </div>
           )}
 
-          {isDate ? (
-            <>
-              <input
-                id={inputId}
-                ref={ref}
-                type="text"
-                placeholder="DD/MM/YYYY"
-                value={displayDate}
-                onChange={handleDateTextChange}
-                className={`w-full text-sm rounded-lg border bg-white px-3.5 py-2 pr-10 text-slate-800 placeholder-slate-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed ${
-                  leftIcon ? 'pl-9' : ''
-                } ${
-                  error
-                    ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
-                    : 'border-slate-300'
-                } ${className}`}
-                {...props}
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={openCalendarPicker}
-                title="Select date (DD/MM/YYYY)"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
-              >
-                <Calendar className="w-4 h-4 text-current" />
-              </button>
-              {/* Hidden native date input to power calendar picker with standard YYYY-MM-DD */}
-              <input
-                ref={hiddenDateInputRef}
-                type="date"
-                value={value ? String(value).slice(0, 10) : ''}
-                onChange={handleNativeDateChange}
-                className="sr-only"
-                tabIndex={-1}
-                aria-hidden="true"
-              />
-            </>
-          ) : (
-            <>
-              <input
-                id={inputId}
-                ref={ref}
-                type={type}
-                value={value}
-                onChange={onChange}
-                className={`w-full text-sm rounded-lg border bg-white px-3.5 py-2 text-slate-800 placeholder-slate-400 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed ${
-                  leftIcon ? 'pl-9' : ''
-                } ${rightIcon ? 'pr-9' : ''} ${
-                  error
-                    ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20'
-                    : 'border-slate-300'
-                } ${className}`}
-                {...props}
-              />
-              {rightIcon && (
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
-                  {rightIcon}
-                </div>
-              )}
-            </>
-          )}
+          <div className="relative flex-1 flex items-center">
+            {leftIcon && (
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                {leftIcon}
+              </div>
+            )}
+
+            {isDate ? (
+              <>
+                <input
+                  id={inputId}
+                  ref={ref}
+                  type="text"
+                  placeholder="DD/MM/YYYY"
+                  value={displayDate}
+                  onChange={handleDateTextChange}
+                  onBlur={onBlur}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? errorId : helperText ? helperId : undefined}
+                  className={`w-full h-12 text-sm rounded-xl border bg-white px-3.5 py-2 pr-10 text-slate-800 placeholder-slate-400 transition-all duration-150 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed ${
+                    leftIcon ? 'pl-10' : ''
+                  } ${prefix ? 'rounded-l-none' : ''} ${
+                    error
+                      ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
+                      : success
+                      ? 'border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20'
+                      : `border-slate-300 ${ringFocusClasses}`
+                  } ${inputClassName}`}
+                  {...props}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={openCalendarPicker}
+                  title="Select date (DD/MM/YYYY)"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors"
+                >
+                  <Calendar className="w-4 h-4 text-current" />
+                </button>
+                <input
+                  ref={hiddenDateInputRef}
+                  type="date"
+                  value={value ? String(value).slice(0, 10) : ''}
+                  onChange={handleNativeDateChange}
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+              </>
+            ) : (
+              <>
+                <input
+                  id={inputId}
+                  ref={ref}
+                  type={type}
+                  value={value}
+                  onChange={onChange}
+                  onBlur={onBlur}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? errorId : helperText ? helperId : undefined}
+                  className={`w-full h-12 text-sm rounded-xl border bg-white px-3.5 py-2 text-slate-800 placeholder-slate-400 transition-all duration-150 focus:outline-none disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed ${
+                    leftIcon ? 'pl-10' : ''
+                  } ${rightIcon || success || error ? 'pr-10' : ''} ${
+                    prefix ? 'rounded-l-none' : ''
+                  } ${
+                    error
+                      ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20'
+                      : success
+                      ? 'border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20'
+                      : `border-slate-300 ${ringFocusClasses}`
+                  } ${inputClassName}`}
+                  {...props}
+                />
+                {/* Right Status Indicator: error icon > success check > custom rightIcon */}
+                {error ? (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-rose-500">
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+                ) : success ? (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-emerald-600">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                ) : rightIcon ? (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400">
+                    {rightIcon}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Inline Error or Helper Text */}
         {error ? (
-          <p className="mt-1.5 text-xs text-rose-600 font-medium">{error}</p>
+          <p
+            id={errorId}
+            role="alert"
+            className="mt-1.5 text-xs text-rose-600 font-medium flex items-center gap-1 animate-in fade-in duration-150"
+          >
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </p>
         ) : helperText ? (
-          <p className="mt-1 text-xs text-slate-500">{helperText}</p>
+          <p id={helperId} className="mt-1.5 text-xs text-slate-600 font-normal">
+            {helperText}
+          </p>
         ) : isDate ? (
-          <p className="mt-0.5 text-[10px] text-slate-400">Format: DD/MM/YYYY</p>
+          <p className="mt-1 text-[11px] text-slate-500">Format: DD/MM/YYYY</p>
         ) : null}
       </div>
     );

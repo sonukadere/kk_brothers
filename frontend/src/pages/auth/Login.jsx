@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
+import { PasswordInput } from '../../components/common/PasswordInput';
 import { Select } from '../../components/common/Select';
 import {
   ShieldCheck,
@@ -12,27 +13,56 @@ import {
   Mail,
   Phone,
   ArrowRight,
+  ArrowLeft,
   Eye,
   EyeOff,
-  ShieldAlert,
-  IdCard,
   UserPlus,
   MapPin,
   CheckCircle2,
+  AlertCircle,
+  Briefcase,
+  Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export const Login = () => {
-  // Modes: 'staff-login' | 'staff-register' | 'admin-login'
-  const [loginMode, setLoginMode] = useState('staff-login');
-  
-  // Login form state
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+export const Login = ({ initialMode }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { login, registerStaff } = useAuth();
+
+  // Determine active view mode: 'staff-login' | 'staff-register' | 'admin-login'
+  const determineInitialMode = () => {
+    if (initialMode) return initialMode;
+    if (location.pathname === '/admin/login' || location.search.includes('mode=admin')) {
+      return 'admin-login';
+    }
+    if (location.search.includes('mode=register')) {
+      return 'staff-register';
+    }
+    return 'staff-login';
+  };
+
+  const [loginMode, setLoginMode] = useState(determineInitialMode);
+
+  // Sync mode if route or search param changes
+  useEffect(() => {
+    if (location.pathname === '/admin/login' || location.search.includes('mode=admin')) {
+      setLoginMode('admin-login');
+    } else if (location.search.includes('mode=register')) {
+      setLoginMode('staff-register');
+    }
+  }, [location.pathname, location.search]);
+
+  // Loading & Submission State
   const [isLoading, setIsLoading] = useState(false);
 
-  // Staff registration form state
+  // Staff & Admin Login Form State
+  const [identifier, setIdentifier] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [registrationBanner, setRegistrationBanner] = useState(null);
+
+  // Staff Registration Form State
   const [registerData, setRegisterData] = useState({
     name: '',
     phone: '',
@@ -41,25 +71,217 @@ export const Login = () => {
     password: '',
     confirmPassword: '',
   });
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
-  const { login, registerStaff } = useAuth();
-  const navigate = useNavigate();
+  // Inline Validation & Touched States
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [mobileConflictError, setMobileConflictError] = useState(null);
 
-  // Handle Login submission
+  // Refs for auto-focus
+  const nameInputRef = useRef(null);
+  const identifierInputRef = useRef(null);
+  const loginPasswordRef = useRef(null);
+
+  // Auto-focus when switching to Register tab
+  useEffect(() => {
+    if (loginMode === 'staff-register') {
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 80);
+      return () => clearTimeout(timer);
+    } else if (loginMode === 'staff-login' || loginMode === 'admin-login') {
+      const timer = setTimeout(() => {
+        if (!identifier) {
+          identifierInputRef.current?.focus();
+        } else {
+          loginPasswordRef.current?.focus();
+        }
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [loginMode]);
+
+  // Real-time Field Validation Rules
+  const validateField = (fieldName, value, allValues = registerData) => {
+    switch (fieldName) {
+      case 'name': {
+        const trimmed = (value || '').trim();
+        if (!trimmed) return 'Full name is required';
+        if (trimmed.length < 3) return 'Name must be at least 3 characters';
+        if (!/^[a-zA-Z\s]+$/.test(trimmed)) return 'Name must contain only letters and spaces';
+        return null;
+      }
+      case 'phone': {
+        const digits = (value || '').replace(/\D/g, '');
+        if (!digits) return 'Mobile number is required';
+        if (digits.length !== 10) return 'Mobile number must be exactly 10 digits';
+        if (!/^[6-9]/.test(digits)) return 'Mobile number must start with 6, 7, 8, or 9';
+        return null;
+      }
+      case 'designation': {
+        if (!value) return 'Please select a role';
+        return null;
+      }
+      case 'city': {
+        if (!value || !value.trim()) return 'City is required';
+        return null;
+      }
+      case 'password': {
+        if (!value) return 'Password is required';
+        if (value.length < 6) return 'Password must be at least 6 characters';
+        if (!/\d/.test(value)) return 'Password must contain at least 1 number';
+        if (!/[a-zA-Z]/.test(value)) return 'Password must contain at least 1 letter';
+        return null;
+      }
+      case 'confirmPassword': {
+        if (!value) return 'Please confirm your password';
+        if (value !== allValues.password) return 'Passwords do not match';
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
+  // Field change handler with live validation update
+  const handleRegisterChange = (field, value) => {
+    const updated = { ...registerData, [field]: value };
+    setRegisterData(updated);
+
+    if (field === 'phone') {
+      setMobileConflictError(null);
+    }
+
+    if (touched[field]) {
+      const err = validateField(field, value, updated);
+      setErrors((prev) => ({ ...prev, [field]: err }));
+    }
+
+    // Also update confirmPassword check if password changes
+    if (field === 'password' && touched.confirmPassword) {
+      const confirmErr = validateField('confirmPassword', updated.confirmPassword, updated);
+      setErrors((prev) => ({ ...prev, confirmPassword: confirmErr }));
+    }
+  };
+
+  // Field blur handler
+  const handleRegisterBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const err = validateField(field, registerData[field], registerData);
+    setErrors((prev) => ({ ...prev, [field]: err }));
+  };
+
+  // Phone input formatting (digits only, max 10)
+  const handlePhoneInput = (e) => {
+    const raw = e.target.value;
+    const cleanDigits = raw.replace(/\D/g, '').slice(0, 10);
+    handleRegisterChange('phone', cleanDigits);
+  };
+
+  // Switch to Staff Login tab with optional prefilled phone
+  const switchToLogin = (prefilledPhone = '') => {
+    setLoginMode('staff-login');
+    setMobileConflictError(null);
+    if (prefilledPhone) {
+      setIdentifier(prefilledPhone);
+    }
+  };
+
+  // Handle Staff Registration Submission
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+
+    // Mark all fields as touched
+    const allTouched = {
+      name: true,
+      phone: true,
+      designation: true,
+      city: true,
+      password: true,
+      confirmPassword: true,
+    };
+    setTouched(allTouched);
+
+    // Validate all fields
+    const newErrors = {};
+    Object.keys(allTouched).forEach((field) => {
+      const err = validateField(field, registerData[field], registerData);
+      if (err) newErrors[field] = err;
+    });
+
+    setErrors(newErrors);
+
+    // If any error exists, do not submit
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please resolve the highlighted form errors.');
+      return;
+    }
+
+    const cleanPhone = registerData.phone.replace(/\D/g, '');
+
+    setIsLoading(true);
+    setMobileConflictError(null);
+
+    const result = await registerStaff(
+      {
+        name: registerData.name.trim(),
+        phone: cleanPhone,
+        designation: registerData.designation,
+        city: registerData.city.trim() || 'Indore',
+        password: registerData.password,
+      },
+      false // Do not auto-login; switch to login tab with prefill per requirements
+    );
+
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success('Registration successful! Please sign in with your password.');
+      setRegistrationBanner({
+        phone: cleanPhone,
+        name: registerData.name.trim(),
+      });
+      // Switch to Staff Login tab with mobile number prefilled
+      switchToLogin(cleanPhone);
+      // Clear password in registration form
+      setRegisterData((prev) => ({
+        ...prev,
+        password: '',
+        confirmPassword: '',
+      }));
+    } else {
+      const msg = result.message || 'Registration failed.';
+      // Check if error is mobile conflict
+      if (
+        msg.toLowerCase().includes('already') ||
+        msg.toLowerCase().includes('mobile') ||
+        msg.toLowerCase().includes('phone')
+      ) {
+        setMobileConflictError(msg);
+        setErrors((prev) => ({
+          ...prev,
+          phone: msg,
+        }));
+      } else {
+        toast.error(msg);
+      }
+    }
+  };
+
+  // Handle Login Submission
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (!identifier.trim() || !password) {
+    if (!identifier.trim() || !loginPassword) {
       toast.error(
-        loginMode === 'staff-login'
-          ? 'Please enter your Mobile Number or Staff ID, and password.'
-          : 'Please enter your Admin Email or Mobile, and password.'
+        loginMode === 'admin-login'
+          ? 'Please enter your Admin Email or Mobile, and password.'
+          : 'Please enter your Mobile Number or Staff ID, and password.'
       );
       return;
     }
 
     setIsLoading(true);
-    const result = await login(identifier.trim(), password);
+    const result = await login(identifier.trim(), loginPassword);
     setIsLoading(false);
 
     if (result.success) {
@@ -71,390 +293,450 @@ export const Login = () => {
     }
   };
 
-  // Handle Staff Registration submission
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    const { name, phone, designation, city, password: regPassword, confirmPassword } = registerData;
-
-    if (!name.trim()) {
-      toast.error('Please enter your full name.');
-      return;
-    }
-
-    const cleanPhone = phone.replace(/[^\d]/g, '').slice(-10);
-    if (cleanPhone.length !== 10) {
-      toast.error('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    if (!regPassword || regPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long.');
-      return;
-    }
-
-    if (regPassword !== confirmPassword) {
-      toast.error('Passwords do not match. Please verify.');
-      return;
-    }
-
-    setIsLoading(true);
-    const result = await registerStaff({
-      name: name.trim(),
-      phone: cleanPhone,
-      designation: designation || 'Kitchen Helper',
-      city: city ? city.trim() : 'Indore',
-      password: regPassword,
-    });
-    setIsLoading(false);
-
-    if (result.success) {
-      navigate('/user/dashboard');
-    }
-  };
-
   const isStaffLogin = loginMode === 'staff-login';
   const isStaffRegister = loginMode === 'staff-register';
   const isAdminLogin = loginMode === 'admin-login';
 
-  const isPhone = identifier && !identifier.includes('@') && /^\+?[\d\s-]+$/.test(identifier);
-  const isStaffId = identifier && /^stf/i.test(identifier.trim());
+  // Computed field validation status
+  const isNameValid = touched.name && !errors.name && registerData.name.trim().length >= 3;
+  const isPhoneValid = touched.phone && !errors.phone && registerData.phone.length === 10;
+  const isCityValid = touched.city && !errors.city && registerData.city.trim().length > 0;
+  const isConfirmMatch =
+    registerData.confirmPassword.length > 0 &&
+    registerData.confirmPassword === registerData.password;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        {/* Brand Logo */}
-        <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-indigo-500 items-center justify-center text-white shadow-lg shadow-indigo-200 mb-3.5">
-          <span className="font-extrabold text-2xl tracking-wider">KK</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/40 to-emerald-50/30 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 relative selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+      {/* Background ambient decorative shapes */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-gradient-to-b from-indigo-200/20 via-emerald-200/10 to-transparent blur-3xl pointer-events-none" />
+
+      {/* Main Container */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-[480px] z-10">
+        {/* Brand Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-indigo-500 items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-4 ring-white mb-3 transition-transform hover:scale-105 duration-200">
+            <span className="font-extrabold text-2xl tracking-wider select-none">KK</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            KK BROTHERS
+          </h1>
+          <p className="mt-1 text-xs font-bold text-slate-700 uppercase tracking-wide">
+            Staff Duty & Payment Management System
+          </p>
+          <p className="text-xs text-slate-600 mt-0.5 max-w-sm mx-auto leading-relaxed">
+            Workforce & Logistics for Hotels, Banquets & Catering
+          </p>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-          KK BROTHERS
-        </h2>
-        <p className="mt-0.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          Staff Duty & Payment Management System
-        </p>
-        <p className="text-xs text-slate-400 mt-1">
-          Workforce & Logistics for Hotels, Banquets & Catering Companies
-        </p>
-      </div>
 
-      <div className="mt-7 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-7 px-6 sm:px-8 rounded-2xl shadow-sm border border-slate-200">
-          {/* NAVIGATION TABS: STAFF SIGN IN vs REGISTER STAFF vs ADMIN */}
-          <div className="grid grid-cols-3 p-1 bg-slate-100 rounded-xl mb-5 text-[11px] font-bold">
-            {/* 1. Staff Sign In */}
-            <button
-              type="button"
-              onClick={() => {
-                setLoginMode('staff-login');
-                setIdentifier('');
-                setPassword('');
-              }}
-              className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
-                isStaffLogin
-                  ? 'bg-white text-emerald-700 shadow-xs ring-1 ring-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+        {/* Card Component */}
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-200/80 p-6 sm:p-8 transition-all relative">
+          {/* Top Tabs (Only Staff Login and Register Staff) */}
+          {!isAdminLogin ? (
+            <div
+              role="tablist"
+              aria-label="Staff Authentication Mode"
+              className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-xl mb-6 text-xs font-bold border border-slate-200/60 select-none"
             >
-              <ChefHat className={`w-3.5 h-3.5 ${isStaffLogin ? 'text-emerald-600' : 'text-slate-400'}`} />
-              <span>Staff Login</span>
-            </button>
+              {/* Tab 1: Staff Login */}
+              <button
+                type="button"
+                role="tab"
+                id="tab-staff-login"
+                aria-selected={isStaffLogin}
+                aria-controls="panel-staff-login"
+                tabIndex={isStaffLogin ? 0 : -1}
+                onClick={() => setLoginMode('staff-login')}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+                  isStaffLogin
+                    ? 'bg-white text-emerald-800 shadow-xs ring-1 ring-slate-200/80 font-bold'
+                    : 'text-slate-600 hover:text-slate-900 font-semibold hover:bg-white/50'
+                }`}
+              >
+                <ChefHat className={`w-4 h-4 ${isStaffLogin ? 'text-emerald-600' : 'text-slate-400'}`} />
+                <span>Staff Login</span>
+              </button>
 
-            {/* 2. Register as Staff */}
-            <button
-              type="button"
-              onClick={() => setLoginMode('staff-register')}
-              className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer relative ${
-                isStaffRegister
-                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700'
-                  : 'text-slate-700 hover:text-emerald-700 hover:bg-white/60'
-              }`}
+              {/* Tab 2: Register Staff */}
+              <button
+                type="button"
+                role="tab"
+                id="tab-staff-register"
+                aria-selected={isStaffRegister}
+                aria-controls="panel-staff-register"
+                tabIndex={isStaffRegister ? 0 : -1}
+                onClick={() => setLoginMode('staff-register')}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition-all duration-150 cursor-pointer ${
+                  isStaffRegister
+                    ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-emerald-700 font-semibold hover:bg-white/50'
+                }`}
+              >
+                <UserPlus className={`w-4 h-4 ${isStaffRegister ? 'text-white' : 'text-emerald-600'}`} />
+                <span>Register Staff</span>
+              </button>
+            </div>
+          ) : (
+            /* Admin Mode Banner Header */
+            <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Administrator Portal</h2>
+                  <p className="text-xs text-slate-600">Full system access & management</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLoginMode('staff-login')}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Staff Login</span>
+              </button>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB 1: REGISTER STAFF FORM                                */}
+          {/* ========================================================= */}
+          {isStaffRegister && (
+            <div
+              id="panel-staff-register"
+              role="tabpanel"
+              aria-labelledby="tab-staff-register"
+              className="animate-in fade-in duration-200"
             >
-              <UserPlus className={`w-3.5 h-3.5 ${isStaffRegister ? 'text-white' : 'text-emerald-600'}`} />
-              <span className="font-semibold">Register Staff</span>
-            </button>
+              <div className="mb-5">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <span>New Staff Registration</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Indore Base
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-600 mt-1">
+                  Fill in your details to get an instant Staff ID and access duty shifts.
+                </p>
+              </div>
 
-            {/* 3. Admin Login */}
+              <form onSubmit={handleRegisterSubmit} noValidate className="space-y-4">
+                {/* 1. Full Name */}
+                <Input
+                  ref={nameInputRef}
+                  id="register-name"
+                  label="Full Name"
+                  required
+                  placeholder="Enter your full name"
+                  value={registerData.name}
+                  onChange={(e) => handleRegisterChange('name', e.target.value)}
+                  onBlur={() => handleRegisterBlur('name')}
+                  error={touched.name ? errors.name : undefined}
+                  success={isNameValid}
+                  leftIcon={<User className="w-4 h-4 text-slate-400" />}
+                  autoComplete="name"
+                  focusColor="emerald"
+                />
+
+                {/* 2. Mobile Number with +91 Prefix Chip */}
+                <div>
+                  <Input
+                    id="register-phone"
+                    label="Mobile Number"
+                    type="tel"
+                    inputMode="numeric"
+                    required
+                    prefix="+91"
+                    placeholder="9876543210"
+                    value={registerData.phone}
+                    onChange={handlePhoneInput}
+                    onBlur={() => handleRegisterBlur('phone')}
+                    error={touched.phone ? errors.phone : undefined}
+                    success={isPhoneValid}
+                    helperText={
+                      !errors.phone ? 'This will be your login ID for all future shifts.' : undefined
+                    }
+                    autoComplete="tel"
+                    focusColor="emerald"
+                  />
+
+                  {/* Inline Conflict Action if Mobile Already Exists */}
+                  {mobileConflictError && (
+                    <div className="mt-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between gap-2 text-xs text-amber-900 animate-in fade-in duration-150">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Account already exists with this mobile.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => switchToLogin(registerData.phone)}
+                        className="font-bold text-emerald-700 hover:text-emerald-800 underline hover:no-underline whitespace-nowrap cursor-pointer shrink-0"
+                      >
+                        Login instead &rarr;
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3 & 4. Role / Designation and City Side-by-Side (Stacked on Mobile) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <Select
+                    id="register-designation"
+                    label="Role / Designation"
+                    required
+                    value={registerData.designation}
+                    onChange={(e) => handleRegisterChange('designation', e.target.value)}
+                    onBlur={() => handleRegisterBlur('designation')}
+                    error={touched.designation ? errors.designation : undefined}
+                    success={touched.designation && !errors.designation}
+                    leftIcon={<Briefcase className="w-4 h-4 text-slate-400" />}
+                    options={[
+                      'Kitchen Helper',
+                      'Chef',
+                      'Waiter',
+                      'Captain',
+                      'Driver',
+                      'Cleaner',
+                      'Other',
+                    ]}
+                    focusColor="emerald"
+                  />
+
+                  <Input
+                    id="register-city"
+                    label="City / Base"
+                    required
+                    placeholder="Indore"
+                    value={registerData.city}
+                    onChange={(e) => handleRegisterChange('city', e.target.value)}
+                    onBlur={() => handleRegisterBlur('city')}
+                    error={touched.city ? errors.city : undefined}
+                    success={isCityValid}
+                    leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
+                    focusColor="emerald"
+                  />
+                </div>
+
+                {/* 5. Password with Live Strength Meter & Hints */}
+                <PasswordInput
+                  id="register-password"
+                  label="Password"
+                  required
+                  placeholder="Create a password"
+                  value={registerData.password}
+                  onChange={(e) => handleRegisterChange('password', e.target.value)}
+                  onBlur={() => handleRegisterBlur('password')}
+                  error={touched.password ? errors.password : undefined}
+                  showStrengthMeter={true}
+                  showHints={true}
+                  autoComplete="new-password"
+                  focusColor="emerald"
+                />
+
+                {/* 6. Confirm Password with Real-Time Match Indicator */}
+                <div>
+                  <PasswordInput
+                    id="register-confirm-password"
+                    label="Confirm Password"
+                    required
+                    placeholder="Confirm your password"
+                    value={registerData.confirmPassword}
+                    onChange={(e) => handleRegisterChange('confirmPassword', e.target.value)}
+                    onBlur={() => handleRegisterBlur('confirmPassword')}
+                    error={touched.confirmPassword ? errors.confirmPassword : undefined}
+                    success={isConfirmMatch}
+                    autoComplete="new-password"
+                    focusColor="emerald"
+                  />
+                  {isConfirmMatch && registerData.confirmPassword.length >= 6 && (
+                    <p className="mt-1.5 text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Passwords match</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Value Guarantee Note */}
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Instant Staff ID & Shift Allocation</span>
+                  </div>
+                  <p className="text-slate-600 pl-5 leading-relaxed">
+                    Once registered, your staff profile is activated immediately for duties and wage vouchers.
+                  </p>
+                </div>
+
+                {/* Sticky Mobile Submit Button Container */}
+                <div className="pt-2 sticky bottom-0 bg-white/95 backdrop-blur-xs pb-1 sm:static sm:bg-transparent sm:pb-0 z-10 border-t border-slate-100 sm:border-0 -mx-6 px-6 sm:mx-0 sm:px-0">
+                  <Button
+                    type="submit"
+                    variant="success"
+                    size="lg"
+                    className="w-full h-12 text-sm font-bold shadow-md shadow-emerald-600/20 rounded-xl"
+                    isLoading={isLoading}
+                    disabled={isLoading}
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    {isLoading ? 'Creating Staff Account...' : 'Complete Staff Registration'}
+                  </Button>
+                </div>
+              </form>
+
+              {/* Footer Switcher */}
+              <div className="text-center pt-4 border-t border-slate-100 mt-5">
+                <p className="text-xs text-slate-700">
+                  Already registered?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchToLogin()}
+                    className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer inline-flex items-center gap-0.5"
+                  >
+                    <span>Login</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB 2: STAFF LOGIN & ADMIN LOGIN FORM                    */}
+          {/* ========================================================= */}
+          {!isStaffRegister && (
+            <div
+              id="panel-staff-login"
+              role="tabpanel"
+              aria-labelledby={isAdminLogin ? undefined : 'tab-staff-login'}
+              className="animate-in fade-in duration-200"
+            >
+              {/* Registration Success Banner on Login Screen */}
+              {registrationBanner && (
+                <div className="mb-4 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Registration Successful!</span>
+                    <p className="text-emerald-700 mt-0.5">
+                      Welcome, {registrationBanner.name}! Your mobile{' '}
+                      <span className="font-mono font-bold">+91 {registrationBanner.phone}</span> is prefilled.
+                      Enter your password to sign in.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                {/* Identifier Input */}
+                <Input
+                  ref={identifierInputRef}
+                  id="login-identifier"
+                  label={isAdminLogin ? 'Admin Email or Mobile' : 'Staff Mobile or Staff ID'}
+                  type="text"
+                  required
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={
+                    isAdminLogin ? 'admin@kkbrothers.com or 6264791823' : '9876543210 or STF-0001'
+                  }
+                  leftIcon={
+                    isAdminLogin ? (
+                      <Mail className="w-4 h-4 text-indigo-600" />
+                    ) : (
+                      <Phone className="w-4 h-4 text-emerald-600" />
+                    )
+                  }
+                  helperText={
+                    isAdminLogin
+                      ? 'Enter your registered administrator email or phone.'
+                      : 'Enter your 10-digit registered mobile or Staff ID.'
+                  }
+                  autoComplete="username"
+                  focusColor={isAdminLogin ? 'indigo' : 'emerald'}
+                />
+
+                {/* Password Input */}
+                <PasswordInput
+                  ref={loginPasswordRef}
+                  id="login-password"
+                  label={isAdminLogin ? 'Admin Password' : 'Password / PIN'}
+                  required
+                  placeholder="Enter your password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  autoComplete="current-password"
+                  focusColor={isAdminLogin ? 'indigo' : 'emerald'}
+                />
+
+                {/* Submit Login Button */}
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    variant={isAdminLogin ? 'primary' : 'success'}
+                    size="lg"
+                    className="w-full h-12 text-sm font-bold shadow-md rounded-xl"
+                    isLoading={isLoading}
+                    disabled={isLoading}
+                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                  >
+                    {isAdminLogin ? 'Sign In as Administrator' : 'Sign In as Staff Worker'}
+                  </Button>
+                </div>
+              </form>
+
+              {/* Link to Register from Staff Login */}
+              {!isAdminLogin && (
+                <div className="text-center pt-4 border-t border-slate-100 mt-5">
+                  <p className="text-xs text-slate-700">
+                    New staff worker?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setLoginMode('staff-register')}
+                      className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer inline-flex items-center gap-0.5"
+                    >
+                      <span>Register Staff</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Small Muted Admin Login Link Below Card (Strictly Required) */}
+        {!isAdminLogin ? (
+          <div className="text-center mt-5">
             <button
               type="button"
               onClick={() => {
                 setLoginMode('admin-login');
                 setIdentifier('');
-                setPassword('');
+                setLoginPassword('');
               }}
-              className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
-                isAdminLogin
-                  ? 'bg-white text-indigo-700 shadow-xs ring-1 ring-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className="text-xs text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
             >
-              <ShieldCheck className={`w-3.5 h-3.5 ${isAdminLogin ? 'text-indigo-600' : 'text-slate-400'}`} />
-              <span>Admin</span>
+              <span>Are you an administrator?</span>
+              <span className="font-semibold text-slate-600 hover:underline">Admin login &rarr;</span>
             </button>
           </div>
-
-          {/* MODE 1 & 3: SIGN IN FORM (STAFF OR ADMIN) */}
-          {!isStaffRegister && (
-            <>
-              {/* Login Form */}
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                {isStaffLogin ? (
-                  <Input
-                    label="Staff Mobile Number or Staff ID"
-                    type="text"
-                    required
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. 9329148985 or STF-0001"
-                    leftIcon={
-                      isStaffId ? (
-                        <IdCard className="w-4 h-4 text-emerald-600" />
-                      ) : (
-                        <Phone className="w-4 h-4 text-emerald-600" />
-                      )
-                    }
-                    helperText="Enter your 10-digit registered mobile number or your Staff ID"
-                  />
-                ) : (
-                  <Input
-                    label="Admin Email or Mobile"
-                    type="text"
-                    required
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. admin@kkbrothers.com or 6264791823"
-                    leftIcon={
-                      isPhone ? (
-                        <Phone className="w-4 h-4 text-indigo-600" />
-                      ) : (
-                        <Mail className="w-4 h-4 text-indigo-600" />
-                      )
-                    }
-                    helperText="Enter your administrator email or mobile phone"
-                  />
-                )}
-
-                <div>
-                  <div className="relative">
-                    <Input
-                      label={isStaffLogin ? 'Password / PIN' : 'Password'}
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
-                      helperText={isStaffLogin ? 'Default initial password is Staff@123' : undefined}
-                      rightIcon={
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    variant={isStaffLogin ? 'success' : 'primary'}
-                    size="lg"
-                    className="w-full"
-                    isLoading={isLoading}
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    {isStaffLogin ? 'Sign In as Staff Worker' : 'Sign In as Administrator'}
-                  </Button>
-                </div>
-              </form>
-
-              {/* Link to Staff Registration */}
-              <div className="text-center pt-4 border-t border-slate-100 mt-5">
-                <p className="text-xs text-slate-600">
-                  New staff worker?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode('staff-register')}
-                    className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <span>Register as Staff Worker</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </p>
-              </div>
-            </>
-          )}
-
-          {/* MODE 2: REGISTER AS STAFF FORM */}
-          {isStaffRegister && (
-            <div>
-              <div className="mb-4 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <UserPlus className="w-4 h-4 text-emerald-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">Staff Worker Registration</h3>
-                    <p className="text-[11px] text-slate-500">Join KK Brothers workforce team (Indore)</p>
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                {/* 1. Full Name */}
-                <Input
-                  label="Full Name"
-                  required
-                  placeholder="e.g. Sonu Kadere"
-                  value={registerData.name}
-                  onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                  leftIcon={<User className="w-4 h-4 text-slate-400" />}
-                />
-
-                {/* 2. Mobile Number */}
-                <Input
-                  label="10-Digit Mobile Number"
-                  type="tel"
-                  required
-                  placeholder="e.g. 6264791823"
-                  value={registerData.phone}
-                  onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                  leftIcon={<Phone className="w-4 h-4 text-slate-400" />}
-                  helperText="This mobile number will be your login ID"
-                />
-
-                {/* 3. Designation / Role (Only Kitchen Helper & Chef) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Select
-                    label="Role / Designation"
-                    required
-                    value={registerData.designation}
-                    onChange={(e) => setRegisterData({ ...registerData, designation: e.target.value })}
-                    options={[
-                      'Kitchen Helper',
-                      'Chef',
-                    ]}
-                  />
-
-                  <Input
-                    label="City / Base Location"
-                    placeholder="Indore"
-                    value={registerData.city}
-                    onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
-                    leftIcon={<MapPin className="w-4 h-4 text-slate-400" />}
-                  />
-                </div>
-
-                {/* 4. Password */}
-                <div>
-                  <Input
-                    label="Create Password"
-                    type={showRegisterPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Min 6 characters (e.g. Staff@123)"
-                    value={registerData.password}
-                    onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
-                    rightIcon={
-                      <button
-                        type="button"
-                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                        className="text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
-                      >
-                        {showRegisterPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    }
-                  />
-                </div>
-
-                {/* 5. Confirm Password */}
-                <div>
-                  <Input
-                    label="Confirm Password"
-                    type={showRegisterPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Re-enter your password"
-                    value={registerData.confirmPassword}
-                    onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                    leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
-                  />
-                </div>
-
-                {/* Registration Benefits Highlight */}
-                <div className="p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-800 space-y-1">
-                  <div className="flex items-center gap-1.5 font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Instant Staff ID & Direct Duty Access</span>
-                  </div>
-                  <p className="text-emerald-700 pl-5">
-                    Your official Staff ID (e.g. STF-XXXX) is generated instantly so you can track shifts and payments right away.
-                  </p>
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-1">
-                  <Button
-                    type="submit"
-                    variant="success"
-                    size="lg"
-                    className="w-full"
-                    isLoading={isLoading}
-                    rightIcon={<UserPlus className="w-4 h-4" />}
-                  >
-                    Complete Staff Registration
-                  </Button>
-                </div>
-              </form>
-
-              {/* Back to Sign In Link */}
-              <div className="text-center pt-4 border-t border-slate-100 mt-4">
-                <p className="text-xs text-slate-600">
-                  Already registered as staff?{' '}
-                  <button
-                    type="button"
-                    onClick={() => setLoginMode('staff-login')}
-                    className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <span>Sign in with Mobile Number</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Security policy notice */}
-          <div className="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2 text-xs text-slate-600 leading-relaxed">
-            <ShieldAlert className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold text-slate-800">
-                {isStaffRegister
-                  ? 'Staff Registration Policy:'
-                  : isStaffLogin
-                  ? 'Staff Worker Access:'
-                  : 'Administrator Access:'}
-              </span>{' '}
-              {isStaffRegister
-                ? 'Only Kitchen Helper and Chef roles are open for registration in Indore. Contact admin for supervisor roles.'
-                : isStaffLogin
-                ? 'Workers can view their personal duty records, daily shifts, and payment voucher history.'
-                : 'Access to workforce rosters, hotel/catering billing, client collections, and business reports.'}
-            </div>
+        ) : (
+          <div className="text-center mt-5">
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode('staff-login');
+                setIdentifier('');
+                setLoginPassword('');
+              }}
+              className="text-xs text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <span>← Return to Staff Portal</span>
+            </button>
           </div>
-        </div>
+        )}
 
-        <div className="text-center mt-6 text-xs text-slate-400">
+        {/* Security & System Info Footer */}
+        <div className="text-center mt-4 text-[11px] text-slate-500">
           KK Brothers Workforce Logistics • Session Protected with JWT
         </div>
       </div>

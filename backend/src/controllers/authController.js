@@ -199,8 +199,19 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    // Role allowed for public registration is strictly 'user' (staff)
-    const validDesignation = designation === 'Chef' ? 'Chef' : 'Kitchen Helper';
+    // Designation validation for staff registration
+    const allowedDesignations = [
+      'Kitchen Helper',
+      'Chef',
+      'Waiter',
+      'Captain',
+      'Driver',
+      'Cleaner',
+      'Other',
+    ];
+    const validDesignation = allowedDesignations.includes(designation)
+      ? designation
+      : 'Kitchen Helper';
 
     // 1. Check if a User already exists with this phone
     const existingUser = await User.findOne({ phone: cleanPhone });
@@ -220,7 +231,13 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    const defaultRate = validDesignation === 'Chef' ? 800 : 600;
+    let defaultRate = 600;
+    if (validDesignation === 'Chef') defaultRate = 800;
+    else if (validDesignation === 'Captain') defaultRate = 900;
+    else if (validDesignation === 'Driver') defaultRate = 700;
+    else if (validDesignation === 'Waiter') defaultRate = 650;
+    else if (validDesignation === 'Cleaner') defaultRate = 500;
+    else defaultRate = 600;
 
     if (staff) {
       // Existing unlinked staff record: link user to it
