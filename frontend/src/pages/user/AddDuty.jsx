@@ -4,12 +4,10 @@ import { dutyApi } from '../../api/dutyApi';
 import { clientApi } from '../../api/clientApi';
 import { useAuth } from '../../context/AuthContext';
 import { formatDate } from '../../utils/dateUtils';
-import PageHeader from '../../components/common/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
 import Button from '../../components/common/Button';
-import Input from '../../components/common/Input';
-import { Badge } from '../../components/common/Badge';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
   Building2,
   Calendar,
@@ -21,8 +19,8 @@ import {
   ShieldCheck,
   Search,
   CheckCircle2,
-  ChevronRight,
   ArrowLeft,
+  FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -48,11 +46,16 @@ export const AddDuty = () => {
     remarks: '',
   });
 
-  // Calculate hours and overnight shift dynamically
+  // Calculate hours and overnight shift dynamically with safe fallback
   const calcHours = (inT, outT) => {
-    if (!inT || !outT) return { hours: 8, isOvernight: false };
+    if (!inT || !outT || typeof inT !== 'string' || typeof outT !== 'string') {
+      return { hours: 8, isOvernight: false };
+    }
     const [inH, inM] = inT.split(':').map(Number);
     const [outH, outM] = outT.split(':').map(Number);
+    if (isNaN(inH) || isNaN(outH)) {
+      return { hours: 8, isOvernight: false };
+    }
     let diff = outH * 60 + (outM || 0) - (inH * 60 + (inM || 0));
     let isOvernight = false;
     if (diff <= 0) {
@@ -63,22 +66,36 @@ export const AddDuty = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
     const loadClients = async () => {
+      setIsLoadingClients(true);
       try {
         const res = await clientApi.getAll({ status: 'active' });
-        if (res.success) {
-          setClients(res.data || []);
-          if (res.data?.length > 0) {
-            setFormData((prev) => ({ ...prev, client: res.data[0]._id }));
+        if (isMounted && res && res.success) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setClients(list);
+          if (list.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              client: prev.client || list[0]._id,
+            }));
           }
         }
       } catch (err) {
-        toast.error('Failed to load hotel & catering list');
+        if (isMounted) {
+          toast.error('Failed to load hotel & catering list');
+        }
       } finally {
-        setIsLoadingClients(false);
+        if (isMounted) {
+          setIsLoadingClients(false);
+        }
       }
     };
+
     loadClients();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleInTimeChange = (val) => {
@@ -101,18 +118,18 @@ export const AddDuty = () => {
     }));
   };
 
-  // Filter clients based on search input
-  const filteredClients = clients.filter((c) => {
-    const q = clientSearch.toLowerCase().trim();
+  // Safe client filtering
+  const safeClients = Array.isArray(clients) ? clients.filter(Boolean) : [];
+  const filteredClients = safeClients.filter((c) => {
+    const q = (clientSearch || '').toLowerCase().trim();
     if (!q) return true;
-    return (
-      c.companyName?.toLowerCase().includes(q) ||
-      c.city?.toLowerCase().includes(q) ||
-      c.type?.toLowerCase().includes(q)
-    );
+    const name = (c?.companyName || '').toLowerCase();
+    const city = (c?.city || '').toLowerCase();
+    const type = (c?.type || '').toLowerCase();
+    return name.includes(q) || city.includes(q) || type.includes(q);
   });
 
-  const selectedClientDoc = clients.find((c) => c._id === formData.client);
+  const selectedClientDoc = safeClients.find((c) => c?._id === formData.client);
 
   const validateForm = () => {
     const newErrors = {};
@@ -150,12 +167,14 @@ export const AddDuty = () => {
     setIsSubmitting(true);
     try {
       const res = await dutyApi.create(formData);
-      if (res.success) {
+      if (res && res.success) {
         setShowConfirmModal(false);
         toast.success(
           res.message || 'Duty slip submitted successfully! Pending Admin verification.'
         );
         navigate('/user/my-duties');
+      } else {
+        toast.error(res?.message || 'Failed to submit duty record');
       }
     } catch (err) {
       toast.error(err.message || 'Failed to submit duty record');
@@ -166,17 +185,21 @@ export const AddDuty = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 pb-6">
       {/* Back button & Header */}
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={() => navigate('/user/dashboard')}
-          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+          className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shadow-2xs"
+          aria-label="Back to dashboard"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Add New Duty</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            Add New Duty
+          </h1>
           <p className="text-xs text-slate-500">Record your work shift at a hotel or caterer</p>
         </div>
       </div>
@@ -192,38 +215,48 @@ export const AddDuty = () => {
 
               {/* Search bar inside dropdown selector */}
               <div className="relative mb-2">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search hotel or caterer by name or city..."
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
                 />
               </div>
 
-              <select
-                required
-                value={formData.client}
-                onChange={(e) => {
-                  setFormData({ ...formData, client: e.target.value });
-                  if (errors.client) setErrors({ ...errors, client: null });
-                }}
-                className={`w-full text-sm font-medium rounded-xl border bg-white p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition ${
-                  errors.client ? 'border-rose-500 bg-rose-50/30' : 'border-slate-300'
-                }`}
-              >
-                <option value="" disabled>
-                  -- Select Hotel or Catering Company --
-                </option>
-                {filteredClients.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.companyName} ({c.type} - {c.city || 'Indore'})
+              {isLoadingClients ? (
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center gap-2 text-xs text-slate-500">
+                  <LoadingSpinner size="sm" text="Loading hotel partners..." />
+                </div>
+              ) : (
+                <select
+                  required
+                  value={formData.client}
+                  onChange={(e) => {
+                    setFormData({ ...formData, client: e.target.value });
+                    if (errors.client) setErrors({ ...errors, client: null });
+                  }}
+                  className={`w-full text-sm font-medium rounded-xl border bg-white p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition cursor-pointer ${
+                    errors.client ? 'border-rose-500 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                >
+                  <option value="" disabled>
+                    -- Select Hotel or Catering Company --
                   </option>
-                ))}
-              </select>
+                  {filteredClients.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.companyName} ({c.type} - {c.city || 'Indore'})
+                    </option>
+                  ))}
+                </select>
+              )}
+
               {errors.client && (
-                <p className="text-xs text-rose-600 mt-1 font-medium">{errors.client}</p>
+                <p className="text-xs text-rose-600 mt-1.5 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{errors.client}</span>
+                </p>
               )}
             </div>
 
@@ -233,7 +266,7 @@ export const AddDuty = () => {
                 2. Enter Place / Location / Section <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   required
@@ -249,7 +282,10 @@ export const AddDuty = () => {
                 />
               </div>
               {errors.location && (
-                <p className="text-xs text-rose-600 mt-1 font-medium">{errors.location}</p>
+                <p className="text-xs text-rose-600 mt-1.5 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{errors.location}</span>
+                </p>
               )}
             </div>
 
@@ -259,7 +295,7 @@ export const AddDuty = () => {
                 3. Select Duty Date <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="date"
                   required
@@ -277,9 +313,11 @@ export const AddDuty = () => {
               </label>
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <span className="block text-[11px] font-semibold text-slate-500 mb-1">In Time</span>
+                  <span className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    In Time
+                  </span>
                   <div className="relative">
-                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="time"
                       required
@@ -291,9 +329,11 @@ export const AddDuty = () => {
                 </div>
 
                 <div>
-                  <span className="block text-[11px] font-semibold text-slate-500 mb-1">Out Time</span>
+                  <span className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    Out Time
+                  </span>
                   <div className="relative">
-                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="time"
                       required
@@ -347,10 +387,10 @@ export const AddDuty = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-base sm:text-lg flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-[0.99] transition cursor-pointer"
+                className="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 active:scale-[0.99] transition cursor-pointer"
               >
-                <Send className="w-5 h-5" />
-                Review & Submit Duty
+                <Send className="w-4 h-4" />
+                <span>Review & Submit Duty</span>
               </button>
             </div>
           </form>
@@ -362,7 +402,6 @@ export const AddDuty = () => {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         title="Confirm Duty Shift Details"
-        size="md"
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-600">
@@ -373,19 +412,19 @@ export const AddDuty = () => {
             <div className="flex justify-between py-1 border-b border-slate-200/70">
               <span className="text-slate-500">Venue:</span>
               <span className="font-bold text-slate-900">
-                {selectedClientDoc?.companyName} ({selectedClientDoc?.type})
+                {selectedClientDoc?.companyName || 'Selected Venue'} ({selectedClientDoc?.type || 'Hotel'})
               </span>
             </div>
 
             <div className="flex justify-between py-1 border-b border-slate-200/70">
               <span className="text-slate-500">Location:</span>
-              <span className="font-semibold text-slate-900">{formData.location}</span>
+              <span className="font-semibold text-slate-900">{formData.location || '—'}</span>
             </div>
 
             <div className="flex justify-between py-1 border-b border-slate-200/70">
               <span className="text-slate-500">Date:</span>
               <span className="font-semibold text-slate-900">
-                {formatDate(formData.dutyDate)}
+                {formData.dutyDate ? formatDate(formData.dutyDate) : 'Today'}
               </span>
             </div>
 
@@ -401,7 +440,9 @@ export const AddDuty = () => {
 
             <div className="flex justify-between py-1">
               <span className="text-slate-500">Calculated Hours:</span>
-              <span className="font-bold text-indigo-700 text-sm">{formData.hoursWorked} Hours</span>
+              <span className="font-bold text-indigo-700 text-sm">
+                {formData.hoursWorked} Hours
+              </span>
             </div>
           </div>
 

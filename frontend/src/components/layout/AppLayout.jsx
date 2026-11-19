@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import MobileDrawer from './MobileDrawer';
 import BottomNav from './BottomNav';
+import ErrorBoundary from '../common/ErrorBoundary';
 
 export const AppLayout = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -26,7 +27,9 @@ export const AppLayout = () => {
         <Navbar onOpenMobileMenu={() => setMobileDrawerOpen(true)} />
 
         <main className="flex-1 p-3 sm:p-5 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
 
         <footer className="hidden lg:flex py-4 px-6 border-t border-slate-200/80 bg-white text-xs text-slate-500 items-center justify-between gap-2">
