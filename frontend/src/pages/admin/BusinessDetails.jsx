@@ -913,12 +913,14 @@ export const BusinessDetails = () => {
             <Input
               label="Contact Person"
               required
+              placeholder="e.g. Sonu Kadere"
               value={editFormData.contactPerson}
               onChange={(e) => setEditFormData({ ...editFormData, contactPerson: e.target.value })}
             />
             <Input
               label="Mobile Number"
               required
+              placeholder="e.g. 6264791823"
               value={editFormData.phone}
               onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
             />

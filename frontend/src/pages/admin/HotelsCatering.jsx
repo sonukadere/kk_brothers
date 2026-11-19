@@ -621,14 +621,14 @@ export const HotelsCatering = () => {
             <Input
               label="Contact Person"
               required
-              placeholder="e.g. Banquet Manager / Accounts Head"
+              placeholder="e.g. Sonu Kadere"
               value={formData.contactPerson}
               onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
             />
             <Input
               label="Mobile Number"
               required
-              placeholder="e.g. 9876543210"
+              placeholder="e.g. 6264791823"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
@@ -770,12 +770,14 @@ export const HotelsCatering = () => {
             <Input
               label="Contact Person"
               required
+              placeholder="e.g. Sonu Kadere"
               value={formData.contactPerson}
               onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
             />
             <Input
               label="Mobile Number"
               required
+              placeholder="e.g. 6264791823"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
