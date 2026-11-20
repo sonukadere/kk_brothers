@@ -8,3 +8,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        value: mongodb+srv://sonu1506_db_user:Sonu%401506@cluster0.ywjskqg.mongodb.net/kk_brothers?retryWrites=true&w=majority&appName=Cluster0
+      - key: MONGO_URI
+        value: mongodb+srv://sonu1506_db_user:Sonu%401506@cluster0.ywjskqg.mongodb.net/kk_brothers?retryWrites=true&w=majority&appName=Cluster0
+      - key: JWT_SECRET
+        value: kk_brothers_super_secret_jwt_key_2026_production_grade
+      - key: JWT_EXPIRE
+        value: 30d
