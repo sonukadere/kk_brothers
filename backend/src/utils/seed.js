@@ -315,6 +315,7 @@ const seedData = async () => {
       await StaffPayment.create({
         staff: staffProfile._id,
         user: staffUser._id,
+        paidAmount: 1700,
         amount: 1700,
         paymentDate: new Date(),
         paymentMode: 'UPI',
@@ -331,7 +332,9 @@ const seedData = async () => {
     if (clientPayCount === 0 && savedClients.length > 0) {
       await ClientPayment.create({
         client: savedClients[0]._id,
+        receivedAmount: 25000,
         amount: 25000,
+        receivedDate: new Date(),
         paymentDate: new Date(),
         paymentMode: 'NEFT / RTGS',
         invoiceNumber: 'INV-2026-0042',
